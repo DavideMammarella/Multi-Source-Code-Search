@@ -8,17 +8,33 @@ import ast
 extracted_data = []
 file_path_and_name = None
 
+
+def is_not_in_blacklist(node_name):
+    """
+    Check if a node (class/method/function) name is in the blacklist.
+    A name is blacklisted if:
+    - is "main"
+    - starts with with "_"
+    - contains the word "test" (including all case variants, such as "TEST")
+    :param node_name: name of the node
+    :return: True if the name is not in the black list, False otherwise
+    """
+    caseless_node_name = node_name.casefold()
+    if (node_name != "main") and not (node_name.startswith("_")) and ("test" not in caseless_node_name):
+        return True
+
+
 def add_data(name, file, line, type, comment):
     """
     Add a (Python) dictionary to a list of dictionaries.
     A dictionary can contain a Python class, Python method or Python function.
-    :param name: name of the class/method/function
+    :param name: name of the class/method/function entity
     :param file: path from repository root of the class/method/function
-    :param line: line of the class/method/function declaration
+    :param line: line of the class/method/function entity declaration
     :param type: class/method/function
-    :param comment: comment line of the class/method/function
+    :param comment: comment line of the class/method/function entity
     """
-    data={}
+    data = {}
     data["name"] = name
     data["file"] = file
     data["line"] = line
@@ -26,41 +42,31 @@ def add_data(name, file, line, type, comment):
     data["comment"] = comment
     extracted_data.append(data)
 
+
 class AstVisitor(ast.NodeVisitor):
     """
     Subclass of ast.NodeVisitor, with the purpose of adding visitor methods.
     """
+
     def visit_ClassDef(self, node: ast.ClassDef):
         """
         Visit a ClassDef node (Top Level Classes).
         :param node: ast node to visit
         """
-        # node.name = names of the ClassDef entity (top level classes)
-        # node.lineno = line number of the ClassDef entity
-        # comment = extract the comment associate to the ClassDef entity
-        # TODO:
-        #  exclude name starts with _,
-        #  exclude name is "main",
-        #  exclude name contains the word "test" (with all the case variants (TEST, teST, ecc)
-        global file_path_and_name, extracted_data
-        comment = ast.get_docstring(node)
-        add_data(node.name, file_path_and_name, node.lineno, "class", comment)
+        if is_not_in_blacklist(node.name):
+            global file_path_and_name, extracted_data
+            comment = ast.get_docstring(node)
+            add_data(node.name, file_path_and_name, node.lineno, "class", comment)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """
         Visit a FunctionDef node (Functions and Methods).
         :param node: ast node to visit
         """
-        # node.name = names of the FunctionDef entity (functions and methods)
-        # node.lineno = line number of the FunctionDef entity
-        # comment = extract the comment associate to the FunctionDef entity
-        # TODO:
-        #  exclude name starts with _,
-        #  exclude name is "main",
-        #  exclude name contains the word "test" (with all the case variants (TEST, teST, ecc)
-        global file_path_and_name, extracted_data
-        comment = ast.get_docstring(node)
-        add_data(node.name, file_path_and_name, node.lineno, "functions", comment)
+        if is_not_in_blacklist(node.name):
+            global file_path_and_name, extracted_data
+            comment = ast.get_docstring(node)
+            add_data(node.name, file_path_and_name, node.lineno, "functions", comment)
 
 
 def main():
@@ -84,6 +90,7 @@ def main():
 
     # dictionary to csv
     print("Total number of row:", len(extracted_data))
+
 
 if __name__ == "__main__":
     main()
