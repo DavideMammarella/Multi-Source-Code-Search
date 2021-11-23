@@ -1,12 +1,26 @@
 import os
 from fnmatch import fnmatch
 import ast
-
-# Save the extracted info into a CSV file.
-# TODO (ASK) inner functions/methods can be skipped by just avoiding to trigger a recursive generic_visit call.
+import csv
+import re
 
 extracted_data = []
 file_path_and_name = None
+
+
+def write_csv():
+    """
+    Write all dictionaries in a CSV file.
+    """
+    global extracted_data
+    file_name = "data.csv"
+    with open(file_name, "w") as csv_file:
+        headers = ["name", "file", "line", "type", "comment"]
+        writer = csv.DictWriter(csv_file, fieldnames=headers)
+        writer.writeheader()
+        for data in extracted_data:
+            writer.writerow(data)
+    print("Total number of row:", len(extracted_data))
 
 
 def is_not_in_blacklist(node_name):
@@ -56,6 +70,8 @@ class AstVisitor(ast.NodeVisitor):
         if is_not_in_blacklist(node.name):
             global file_path_and_name, extracted_data
             comment = ast.get_docstring(node)
+            if comment is not None:
+                comment = re.sub(r'["\n]', " ", comment)
             add_data(node.name, file_path_and_name, node.lineno, "class", comment)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -66,6 +82,8 @@ class AstVisitor(ast.NodeVisitor):
         if is_not_in_blacklist(node.name):
             global file_path_and_name, extracted_data
             comment = ast.get_docstring(node)
+            if comment is not None:
+                comment = re.sub(r'["\n]', " ", comment)
             add_data(node.name, file_path_and_name, node.lineno, "functions", comment)
 
 
@@ -74,6 +92,7 @@ def main():
     Extract data:
     - Get all *.py files found under input directory (tensorflow) as input
     - Process every Python file to create a CSV file with names/comments of Python classes, methods, functions
+    - Save the extracted info into a CSV file
     """
     root = "tensorflow"
     pattern = "*.py"
@@ -89,7 +108,7 @@ def main():
                     AstVisitor().visit(ast_of_py_file)
 
     # dictionary to csv
-    print("Total number of row:", len(extracted_data))
+    write_csv()
 
 
 if __name__ == "__main__":
