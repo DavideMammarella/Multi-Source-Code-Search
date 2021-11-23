@@ -14,13 +14,18 @@ def write_csv():
     """
     global extracted_data
     file_name = "data.csv"
+
     with open(file_name, "w") as csv_file:
         headers = ["name", "file", "line", "type", "comment"]
         writer = csv.DictWriter(csv_file, fieldnames=headers)
         writer.writeheader()
         for data in extracted_data:
             writer.writerow(data)
-    print("Total number of row:", len(extracted_data))
+
+    print("Classes: ", len([d for d in extracted_data if d.get("type") == "class"]),
+          "\nMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
+          "\nFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
+          "\nTotal entities:", len(extracted_data))
 
 
 def comment_standardization(comment):
@@ -86,7 +91,6 @@ class AstVisitor(ast.NodeVisitor):
             if isinstance(method, ast.FunctionDef) and is_not_in_blacklist(method.name):
                 comment = comment_standardization(ast.get_docstring(method))
                 add_data(method.name, file_path_and_name, method.lineno, "method", comment)
-
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """
