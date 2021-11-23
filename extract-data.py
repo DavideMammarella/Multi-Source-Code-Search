@@ -23,6 +23,17 @@ def write_csv():
     print("Total number of row:", len(extracted_data))
 
 
+def comment_standardization(comment):
+    """
+    Standardize a comment line in order to be processed by a dictionary (remove " and \n).
+    :param comment: comment line
+    :return: standardized comment line
+    """
+    if comment is not None:
+        comment = re.sub(r'["\n]', " ", comment)
+    return comment
+
+
 def is_not_in_blacklist(node_name):
     """
     Check if a node (class/method/function) name is in the blacklist.
@@ -69,9 +80,7 @@ class AstVisitor(ast.NodeVisitor):
         """
         if is_not_in_blacklist(node.name):
             global file_path_and_name, extracted_data
-            comment = ast.get_docstring(node)
-            if comment is not None:
-                comment = re.sub(r'["\n]', " ", comment)
+            comment = comment_standardization(ast.get_docstring(node))
             add_data(node.name, file_path_and_name, node.lineno, "class", comment)
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -81,9 +90,7 @@ class AstVisitor(ast.NodeVisitor):
         """
         if is_not_in_blacklist(node.name):
             global file_path_and_name, extracted_data
-            comment = ast.get_docstring(node)
-            if comment is not None:
-                comment = re.sub(r'["\n]', " ", comment)
+            comment = comment_standardization(ast.get_docstring(node))
             add_data(node.name, file_path_and_name, node.lineno, "functions", comment)
 
 
@@ -107,7 +114,6 @@ def main():
                     ast_of_py_file = ast.parse(py_file.read())
                     AstVisitor().visit(ast_of_py_file)
 
-    # dictionary to csv
     write_csv()
 
 
