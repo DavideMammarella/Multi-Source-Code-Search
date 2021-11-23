@@ -75,23 +75,28 @@ class AstVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node: ast.ClassDef):
         """
-        Visit a ClassDef node (Top Level Classes).
+        Visit a ClassDef node (Top Level Classes and Methods).
         :param node: ast node to visit
         """
+        global file_path_and_name, extracted_data
         if is_not_in_blacklist(node.name):
-            global file_path_and_name, extracted_data
             comment = comment_standardization(ast.get_docstring(node))
             add_data(node.name, file_path_and_name, node.lineno, "class", comment)
+        for method in node.body:
+            if isinstance(method, ast.FunctionDef) and is_not_in_blacklist(method.name):
+                comment = comment_standardization(ast.get_docstring(method))
+                add_data(method.name, file_path_and_name, method.lineno, "method", comment)
+
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """
-        Visit a FunctionDef node (Functions and Methods).
+        Visit a FunctionDef node (Functions).
         :param node: ast node to visit
         """
+        global file_path_and_name, extracted_data
         if is_not_in_blacklist(node.name):
-            global file_path_and_name, extracted_data
             comment = comment_standardization(ast.get_docstring(node))
-            add_data(node.name, file_path_and_name, node.lineno, "functions", comment)
+            add_data(node.name, file_path_and_name, node.lineno, "function", comment)
 
 
 def main():
