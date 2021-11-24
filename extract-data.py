@@ -35,7 +35,9 @@ def comment_standardization(comment):
     :return: standardized comment line
     """
     if comment is not None:
-        comment = re.sub(r'["\n]', " ", comment)
+        comment = re.sub(r'["{1,}]', "", comment)
+        comment = re.sub(r"[\n]", " ", comment)
+        comment = re.sub(" {2,}", " ", comment)
     return comment
 
 
@@ -112,9 +114,9 @@ def get_and_visit_files(directory, file_extension):
     Reference for directory visiting: stackoverflow.com/questions/2909975
 
     :param directory: input directory
-    :param file_extension:
+    :param file_extension: extension of file to extract in "*.extension" format
     """
-    for path, subdirs, files in os.walk(directory):
+    for path, _, files in os.walk(directory):
         for file in files:
             if fnmatch(file, file_extension):
                 global file_path_and_name
