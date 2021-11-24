@@ -10,7 +10,7 @@ file_path_and_name = None
 
 def write_csv():
     """
-    Write all dictionaries in a CSV file.
+    Write all dictionaries (extracted info) in a CSV file.
     """
     global extracted_data
     file_name = "data.csv"
@@ -103,26 +103,30 @@ class AstVisitor(ast.NodeVisitor):
             add_data(node.name, file_path_and_name, node.lineno, "function", comment)
 
 
-def main():
+def get_and_visit_files(directory, file_extension):
     """
-    Extract data:
+    Extract all "file_extension" file within a "directory" (and any directory below) and visit them, precisely:
     - Get all *.py files found under input directory (tensorflow) as input
-    - Process every Python file to create a CSV file with names/comments of Python classes, methods, functions
-    - Save the extracted info into a CSV file
-    """
-    root = "tensorflow"
-    pattern = "*.py"
+    - Process every Python file to create (Python) dictionaries with names/comments of Python classes/methods/functions
 
-    # https://stackoverflow.com/questions/2909975/python-list-directory-subdirectory-and-files (answer 2)
-    for path, subdirs, files in os.walk(root):
+    Reference for directory visiting: stackoverflow.com/questions/2909975
+
+    :param directory: input directory
+    :param file_extension:
+    """
+    for path, subdirs, files in os.walk(directory):
         for file in files:
-            if fnmatch(file, pattern):
+            if fnmatch(file, file_extension):
                 global file_path_and_name
                 file_path_and_name = os.path.join(path, file)
                 with open(file_path_and_name, 'r') as py_file:
                     ast_of_py_file = ast.parse(py_file.read())
                     AstVisitor().visit(ast_of_py_file)
 
+
+def main():
+    root_directory = "tensorflow"
+    get_and_visit_files(root_directory, "*.py")
     write_csv()
 
 
