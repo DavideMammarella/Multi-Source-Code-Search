@@ -1,9 +1,8 @@
-import os
-import re
+from fnmatch import fnmatch
 import ast
 import csv
-from fnmatch import fnmatch
-
+import os
+import re
 
 extracted_data = []
 file_path_and_name = None
