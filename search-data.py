@@ -23,15 +23,9 @@ def represent_entities():
     - Doc2Vec: doc2vec vectors with k = 300
     """
 
-def snake_case_to_camel_case(text):
-    """
-    CamelCase conversion of a snake_case text.
-    Reference: stackoverflow.com/questions/19053707
-
-    :param text: text to be converted (snake_case format)
-    """
-    components = text.split('_')
-    return components[0] + ''.join(x.title() for x in components[1:])
+def underscore_split(text):
+    matches = text.split("_")
+    return matches
 
 def camel_case_split(text):
     """
@@ -43,29 +37,39 @@ def camel_case_split(text):
     matches = re.finditer(".+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)", text)
     return [m.group(0) for m in matches]
 
-def create_corpus():
+def data_standardization(data):
     """
-    Create a corpus from the code entity names and comments:
+    Standardize a text:
     1. split entity names by camel-case and underscore (e.g., go_to_myHome -> [go, to, my, home])
     2. filter stopwords = {test, tests, main}
     3. convert all words to lowercase
+    :param data: text to be standardized
+    """
+    data_standardized = []
+    stopwords = ["test", "tests", "main"]
+
+    for element in data:
+        list_underscore = underscore_split(element)
+        for element_underscore in list_underscore:
+            list_elements = [x.lower() for x in camel_case_split(element_underscore)]
+        data_temp = [i for i in list_elements if i not in stopwords]
+        data_standardized += data_temp
+
+    return data_standardized
+
+def create_corpus():
+    """
+    Create a corpus from the code entity names and comments
     """
     with open("data.csv") as csv_file:
         extracted_data = csv.DictReader(csv_file, delimiter=",")
         names_and_comments_raw = [{key: row[key] for key in ("name", "comment")} for row in extracted_data]
-
     names_raw = [d["name"] for d in names_and_comments_raw if "name" in d]
     comments_raw = [d["comment"] for d in names_and_comments_raw if "comment" in d]
-    stopwords = ["test", "tests", "main"]
+    data_raw = names_raw + comments_raw
 
-    data_standardized = []
-    for name in names_raw:
-        name = snake_case_to_camel_case(name) #everything in camelcase
-        names_temp = [x.lower() for x in camel_case_split(name)] #camelCase split + lowercase
-        names_temp = [i for i in names_temp if i not in stopwords] #exclude stopwords
-        data_standardized += names_temp
-
-    print(data_standardized)
+    corpus = data_standardization(data_raw)
+    print(corpus)
 
 def main():
     create_corpus()
