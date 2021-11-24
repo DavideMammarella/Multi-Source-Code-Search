@@ -1,7 +1,5 @@
-import re
 import csv
 # Hints:
-# • Use regular expressions (re.search) for camel-case splitting
 # • Refer to the Python examples in THEO-10-gensim.pdf and to the Python scripts mentioned in the slides and available on iCorsi
 # • Sort the documents in the corpus by similarity to get the top-5 entities most similar to the query for FREQ, TF-IDF, LSI
 # • Use function most_similar with topn=5 to get the top-5 entities most similar to the query for Doc2Vec
@@ -24,12 +22,18 @@ def represent_entities():
     """
 
 def underscore_split(text):
+    """
+    Split a text by underscore (e.g., go_to_myHome -> [go, to, my, home]).
+    Reference: stackoverflow.com/questions/29916065
+
+    :param text: text to be splitted
+    """
     matches = text.split("_")
     return matches
 
 def camel_case_split(text):
     """
-    CamelCase split of a text (works with: ABCdef, AbcDef, abcDef, abcDEF)
+    Split a text by CamelCase (works with: ABCdef, AbcDef, abcDef, abcDEF)
     Reference: stackoverflow.com/questions/29916065
 
     :param text: text to be splitted
@@ -40,7 +44,7 @@ def camel_case_split(text):
 def data_standardization(data):
     """
     Standardize a text:
-    1. split entity names by camel-case and underscore (e.g., go_to_myHome -> [go, to, my, home])
+    1. split entity names (by CamelCase and underscore)
     2. filter stopwords = {test, tests, main}
     3. convert all words to lowercase
     :param data: text to be standardized
@@ -49,24 +53,23 @@ def data_standardization(data):
     stopwords = ["test", "tests", "main"]
 
     for element in data:
-        list_underscore = underscore_split(element)
-        for element_underscore in list_underscore:
-            list_elements = [x.lower() for x in camel_case_split(element_underscore)]
-        data_temp = [i for i in list_elements if i not in stopwords]
-        data_standardized += data_temp
+        words_no_underscore = underscore_split(element)
+        for word in words_no_underscore:
+            words_standardized = [x.lower() for x in camel_case_split(word)]
+            words_filtered = [i for i in words_standardized if i not in stopwords]
+            data_standardized += words_filtered
 
     return data_standardized
 
 def create_corpus():
     """
-    Create a corpus from the code entity names and comments
+    Create a corpus from the code entity names and comments.
     """
+    data_raw = []
     with open("data.csv") as csv_file:
         extracted_data = csv.DictReader(csv_file, delimiter=",")
-        names_and_comments_raw = [{key: row[key] for key in ("name", "comment")} for row in extracted_data]
-    names_raw = [d["name"] for d in names_and_comments_raw if "name" in d]
-    comments_raw = [d["comment"] for d in names_and_comments_raw if "comment" in d]
-    data_raw = names_raw + comments_raw
+        for row in extracted_data:
+            data_raw.extend((row["name"], row["comment"]))
 
     corpus = data_standardization(data_raw)
     print(corpus)
