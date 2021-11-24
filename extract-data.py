@@ -106,7 +106,6 @@ def get_and_visit_files(directory, file_extension):
     Extract all "file_extension" file within a "directory" (and any directory below) and visit them, precisely:
     - Get all *.py files found under input directory (tensorflow) as input
     - Process every Python file to create (Python) dictionaries with names/comments of Python classes/methods/functions
-
     Reference for directory visiting: stackoverflow.com/questions/2909975
 
     :param directory: input directory
