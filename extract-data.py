@@ -1,8 +1,9 @@
 import os
-from fnmatch import fnmatch
+import re
 import ast
 import csv
-import re
+from fnmatch import fnmatch
+
 
 extracted_data = []
 file_path_and_name = None
@@ -56,22 +57,17 @@ def is_not_in_blacklist(node_name):
         return True
 
 
-def add_data(name, file, line, type, comment):
+def add_data(name, file, line, entity_type, comment):
     """
     Add a (Python) dictionary to a list of dictionaries.
     A dictionary can contain a Python class, Python method or Python function.
     :param name: name of the class/method/function entity
     :param file: path from repository root of the class/method/function
     :param line: line of the class/method/function entity declaration
-    :param type: class/method/function
+    :param entity_type: class/method/function
     :param comment: comment line of the class/method/function entity
     """
-    data = {}
-    data["name"] = name
-    data["file"] = file
-    data["line"] = line
-    data["type"] = type
-    data["comment"] = comment
+    data = {"name": name, "file": file, "line": line, "type": entity_type, "comment": comment}
     extracted_data.append(data)
 
 
@@ -116,10 +112,10 @@ def get_and_visit_files(directory, file_extension):
     :param directory: input directory
     :param file_extension: extension of file to extract in "*.extension" format
     """
+    global file_path_and_name
     for path, _, files in os.walk(directory):
         for file in files:
             if fnmatch(file, file_extension):
-                global file_path_and_name
                 file_path_and_name = os.path.join(path, file)
                 with open(file_path_and_name, 'r') as py_file:
                     ast_of_py_file = ast.parse(py_file.read())
