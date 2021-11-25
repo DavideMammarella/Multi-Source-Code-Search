@@ -28,7 +28,9 @@ def doc2vec_train(corpus):
     Represent entities using the doc2vec vectors with k = 300.
     :param corpus:
     """
-
+    # processed_corpus = need corpus processing
+    doc2vec = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
+    print("Doc2Vec loaded!")
 
 def lsi_train(corpus):
     """
