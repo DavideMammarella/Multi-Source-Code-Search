@@ -7,6 +7,7 @@ from gensim.models import TfidfModel, LsiModel, LdaModel
 from gensim.corpora import Dictionary
 from collections import defaultdict
 import gensim.corpora as cp
+import requests
 import pprint
 import csv
 import re
@@ -52,7 +53,7 @@ def frequency_train(corpus):
     print("Frequency trained!")
     query_document = "optimizer that implements the adadelta algorithm".split()
     query_bow = frequency_dictionary.doc2bow(query_document)
-    similarity = frequency_index[query_bow ]
+    similarity = frequency_index[query_bow]
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
@@ -95,18 +96,25 @@ def data_standardization(data):
     1. split entity names (by CamelCase and underscore)
     2. filter stopwords = {test, tests, main}
     3. convert all words to lowercase
-    :param data: text to be standardized
+    :param data: ["name", "comment"]
     """
     data_standardized = []
-    stopwords = ["test", "tests", "main"]
-    word = []
+    words_standardized = []
+    stopwords_list = requests.get(
+        "https://github.com/stopwords-iso/stopwords-en/blob/master/stopwords-en.txt").content
+    stopwords = set(stopwords_list.decode().splitlines())
+    stopwords.update(["test", "tests", "main"])
 
-    for element in data:
-        words_no_underscore = underscore_split(element)
+    for name, comment in data:
+        # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
+        words_no_underscore = underscore_split(name) + underscore_split(comment)
+        # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
         for word in words_no_underscore:
-            words_standardized = [x.lower() for x in camel_case_split(word)]
-            words_filtered = [i for i in words_standardized if i not in stopwords]
-            data_standardized += [words_filtered]
+            words_camel_cased = camel_case_split(word)
+            words_standardized.extend(words_camel_cased)
+        words_filtered = [i for i in words_standardized if i not in stopwords]
+        data_standardized += [words_filtered]
+        words_standardized = []
 
     #print(data_standardized)
     return data_standardized
@@ -121,10 +129,8 @@ def create_corpus():
         extracted_data = csv.DictReader(csv_file, delimiter=",")
         for row in extracted_data:
             if row["comment"] != "":
-                data_raw.append(row["name"])
-                data_raw.append(row["comment"])
+                data_raw.append([row["name"], row["comment"]])
 
-    # ok until here
     #print(data_raw)
     return data_standardization(data_raw)
 
