@@ -99,14 +99,16 @@ def data_standardization(data):
     """
     data_standardized = []
     stopwords = ["test", "tests", "main"]
+    word = []
 
     for element in data:
         words_no_underscore = underscore_split(element)
         for word in words_no_underscore:
             words_standardized = [x.lower() for x in camel_case_split(word)]
             words_filtered = [i for i in words_standardized if i not in stopwords]
-            data_standardized += words_filtered
+            data_standardized += [words_filtered]
 
+    #print(data_standardized)
     return data_standardized
 
 
@@ -118,8 +120,12 @@ def create_corpus():
     with open("data.csv") as csv_file:
         extracted_data = csv.DictReader(csv_file, delimiter=",")
         for row in extracted_data:
-            data_raw.extend((row["name"], row["comment"]))
+            if row["comment"] != "":
+                data_raw.append(row["name"])
+                data_raw.append(row["comment"])
 
+    # ok until here
+    #print(data_raw)
     return data_standardization(data_raw)
 
 
