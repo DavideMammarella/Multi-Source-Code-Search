@@ -3,10 +3,13 @@
 # • Sort the documents in the corpus by similarity to get the top-5 entities most similar to the query for FREQ, TF-IDF, LSI
 # • Use function most_similar with topn=5 to get the top-5 entities most similar to the query for Doc2Vec
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
+from gensim.parsing.preprocessing import remove_stopwords
+from gensim.parsing.preprocessing import STOPWORDS
 from gensim.models import TfidfModel, LsiModel, LdaModel
 from gensim.corpora import Dictionary
 from collections import defaultdict
 import gensim.corpora as cp
+import gensim
 import requests
 import pprint
 import csv
@@ -59,6 +62,7 @@ def frequency_train(corpus):
         rank.append([score, corpus[idx]])
     print(rank[:5])
 
+
 def process_corpus(corpus):
     frequency = defaultdict(int)
     for text in corpus:
@@ -66,6 +70,14 @@ def process_corpus(corpus):
             frequency[token] += 1
     processed_corpus = [[token for token in text if frequency[token] > 1] for text in corpus]
     return processed_corpus
+
+
+def remove_stopwords(text):
+    all_stopwords_gensim = STOPWORDS.union(set(["test", "tests", "main"]))
+    tokenized_text = text.split()
+    words_filtered = [word for word in tokenized_text if word not in all_stopwords_gensim]
+    word = " ".join(words_filtered)
+    return word
 
 
 def underscore_split(text):
@@ -100,23 +112,24 @@ def data_standardization(data):
     """
     data_standardized = []
     words_standardized = []
-    stopwords_list = requests.get(
-        "https://github.com/stopwords-iso/stopwords-en/blob/master/stopwords-en.txt").content
-    stopwords = set(stopwords_list.decode().splitlines())
-    stopwords.update(["test", "tests", "main"])
+    words_standardized2 = []
 
     for name, comment in data:
         # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
         words_no_underscore = underscore_split(name) + underscore_split(comment)
         # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
         for word in words_no_underscore:
-            words_camel_cased = camel_case_split(word)
-            words_standardized.extend(words_camel_cased)
-        words_filtered = [i for i in words_standardized if i not in stopwords]
-        data_standardized += [words_filtered]
+            words_no_camel_case = camel_case_split(word)
+            words_standardized.extend(words_no_camel_case)
+        # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
+        for word in words_standardized:
+            words_no_stopwords = remove_stopwords(word)
+            words_standardized2.append(words_no_stopwords)
+        data_standardized += [words_standardized2]
         words_standardized = []
+        words_standardized2 = []
 
-    #print(data_standardized)
+    # print(data_standardized)
     return data_standardized
 
 
@@ -131,7 +144,7 @@ def create_corpus():
             if row["comment"] != "":
                 data_raw.append([row["name"], row["comment"]])
 
-    #print(data_raw)
+    # print(data_raw)
     return data_standardization(data_raw)
 
 
