@@ -109,6 +109,7 @@ def process_corpus(corpus):
 
 def remove_stopwords(text):
     all_stopwords_gensim = STOPWORDS.union(set(["test", "tests", "main"]))
+    all_stopwords_gensim = all_stopwords_gensim.difference({"get", "set"})
     tokenized_text = text.split()
     words_filtered = [word for word in tokenized_text if word not in all_stopwords_gensim]
     word = " ".join(words_filtered)
