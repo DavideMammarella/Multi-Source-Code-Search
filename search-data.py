@@ -1,6 +1,3 @@
-# Hints:
-# • Sort the documents in the corpus by similarity to get the top-5 entities most similar to the query for FREQ, TF-IDF, LSI
-# • Use function most_similar with topn=5 to get the top-5 entities most similar to the query for Doc2Vec
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
 from gensim.parsing.preprocessing import remove_stopwords
 from gensim.parsing.preprocessing import STOPWORDS
@@ -23,8 +20,8 @@ def print_top_5_entities(data, top_5_index, search_engine):
           "============================================================")
     for elem in top_5_index:
         print("Python class:", data[elem]["name"],
-              "\nFile", data[elem]["file"],
-              "\nLine", data[elem]["line"],
+              "\nFile:", data[elem]["file"],
+              "\nLine:", data[elem]["line"],
               "\n------------------------------------------------------------")
 
 
@@ -45,9 +42,7 @@ def lsi_train(corpus, query):
     Represent entities using the LSI vectors with k = 300.
     :param corpus:
     """
-    processed_corpus = process_corpus(corpus)
-    dictionary = Dictionary(processed_corpus)
-    corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
+    dictionary, query_bow, corpus_bow = process_corpus_dictionary_query(corpus, query)
 
     tfidf = TfidfModel(corpus_bow)
     corpus_tfidf = tfidf[corpus_bow]
@@ -55,7 +50,6 @@ def lsi_train(corpus, query):
     lsi = LsiModel(corpus_tfidf, id2word=dictionary, num_topics=300)
     corpus_lsi = lsi[corpus_tfidf]
 
-    query_bow = dictionary.doc2bow(query.lower().split())
     vec_lsi = lsi[tfidf[query_bow]]
     index = MatrixSimilarity(corpus_lsi)
 
@@ -70,14 +64,11 @@ def tf_idf_train(corpus, query):
     Represent entities using the TF-IDF vectors.
     :param corpus:
     """
-    processed_corpus = process_corpus(corpus)
-    dictionary = Dictionary(processed_corpus)
-    corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
+    dictionary, query_bow, corpus_bow = process_corpus_dictionary_query(corpus, query)
 
     tfidf = TfidfModel(corpus_bow)
     tf_idf_index = SparseMatrixSimilarity(tfidf[corpus_bow], num_features=len(dictionary))
 
-    query_bow = dictionary.doc2bow(query.lower().split())
     similarity = tf_idf_index[query_bow]
 
     top_5_index = get_top_5_index(similarity)
@@ -89,13 +80,9 @@ def frequency_train(corpus, query):
     Represent entities using the FREQ (frequency) vectors.
     :param corpus: processed corpus
     """
-    processed_corpus = process_corpus(corpus)
-    dictionary = Dictionary(processed_corpus)
-    corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
+    dictionary, query_bow, corpus_bow = process_corpus_dictionary_query(corpus, query)
 
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
-
-    query_bow = dictionary.doc2bow(query.lower().split())
     similarity = frequency_index[query_bow]
 
     top_5_index = get_top_5_index(similarity)
@@ -108,13 +95,16 @@ def get_top_5_index(similarity):
     return list_top_5_index[:5]
 
 
-def process_corpus(corpus):
+def process_corpus_dictionary_query(corpus, query):
     frequency = defaultdict(int)
     for text in corpus:
         for token in text:
             frequency[token] += 1
     processed_corpus = [[token for token in text if frequency[token] > 1] for text in corpus]
-    return processed_corpus
+    dictionary = Dictionary(processed_corpus)
+    corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
+    query_bow = dictionary.doc2bow(query.lower().split())
+    return dictionary, query_bow, corpus_bow
 
 
 def remove_stopwords(text):
