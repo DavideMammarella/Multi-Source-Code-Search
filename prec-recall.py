@@ -29,7 +29,7 @@ def ground_truth_txt_to_dict():
             if len(lines) < 3:  # Make sure that there is the correct amount of lines
                 return "ERROR!"
             ground_truth.append({  # Add a dictionary to the data with:
-                "Query": lines[0],  # First line: name
+                "Query": lines[0].lower(),  # First line: name
                 "Function/Class name": lines[1],  # Second line: date
                 "File": lines[2]  # Third line and onwards: info
             })
