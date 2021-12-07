@@ -13,11 +13,20 @@ import re
 import json
 
 
-def print_top_5_entities():
+def print_top_5_entities(data, top_5_index, search_engine):
     """
     Given a query string, for each embedding print the top-5 most similar entities
     (entity name, file name, line of code), based on cosine similarity.
     """
+    print("============================================================\n",
+          search_engine, "            TOP-5 MOST SIMILAR ENTITIES (ASC)\n"
+          "============================================================")
+    for elem in top_5_index:
+        print("Python class:", data[elem]["name"],
+              "\nFile", data[elem]["file"],
+              "\nLine", data[elem]["line"],
+              "\n------------------------------------------------------------")
+
 
 
 def doc2vec_train(corpus, query):
@@ -92,11 +101,15 @@ def frequency_train(corpus, query):
     query_bow = dictionary.doc2bow(query.lower().split())
     similarity = frequency_index[query_bow]
 
-    rank = []
-    # return score and corpus
+    # return top 5 index
+    top_5_index = get_top_5_index(similarity)
+    return top_5_index
+
+def get_top_5_index(similarity):
+    list_top_5_index = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
-        rank.append([score, corpus[idx]])
-    print(rank[:5])
+        list_top_5_index.append(idx)
+    return list_top_5_index[:5]
 
 
 def process_corpus(corpus):
@@ -208,11 +221,11 @@ def main():
     # print(corpus[:2])
     # print(corpus[-2:])
     query = "Optimizer that implements the Adadelta algorithm"
-    frequency_train(corpus, query)
+    freq_top_5 = frequency_train(corpus, query)
+    print_top_5_entities(data, freq_top_5, "FREQ")
     # tf_idf_train(corpus, query)
     # lsi_train(corpus, query)
     # doc2vec_train(corpus, query)
-    # print_top_5_entities()
 
 
 if __name__ == "__main__":
