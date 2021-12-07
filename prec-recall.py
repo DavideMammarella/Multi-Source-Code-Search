@@ -3,9 +3,27 @@ import importlib
 
 search_data = importlib.import_module("search-data")
 
+def query_search_engine(ground_truth):
+    """
+    Querying search engines given a dictionary of queries.
+    :return:
+    """
+    queries_list = [d["query"] for d in ground_truth]
+    corpus = search_data.create_corpus()
+    top_5 = []
+    for query in queries_list:
+        top_5_freq = search_data.frequency_train(corpus, query)
+        top_5_tf_idf = search_data.tf_idf_train(corpus, query)
+        top_5_lsi = search_data.lsi_train(corpus, query)
+        top_5_doc2vec = search_data.doc2vec_train(corpus, query)
+        # crea un dizionario con
+        # query : ""
+        # top_5_... : ""
+    print(queries_list)
+
 def ground_truth_txt_to_dict():
     """
-    Parse a "ground truth" txt file in a dictionary.
+    Parse a "ground truth" txt file in a list of dictionaries.
 
     File structure (name must be ground-truth-unique.txt):
     SECTION
@@ -29,16 +47,18 @@ def ground_truth_txt_to_dict():
             if len(lines) < 3:  # Make sure that there is the correct amount of lines
                 return "ERROR!"
             ground_truth.append({  # Add a dictionary to the data with:
-                "Query": lines[0].lower(),  # First line: name
-                "Function/Class name": lines[1],  # Second line: date
-                "File": lines[2]  # Third line and onwards: info
+                "query": lines[0].lower(),  # First line: name
+                "function/class name": lines[1],  # Second line: date
+                "file": lines[2]  # Third line and onwards: info
             })
 
-    print(json.dumps(ground_truth, indent=3, default=str))
-    print("Number of queries: ", len(ground_truth))
+    return ground_truth
+    #print(json.dumps(ground_truth, indent=3, default=str))
+    #print("Number of queries: ", len(ground_truth))
 
 def main():
-    ground_truth_txt_to_dict()
+    ground_truth_dict_list = ground_truth_txt_to_dict()
+    query_search_engine(ground_truth_dict_list)
 
 if __name__ == "__main__":
     main()

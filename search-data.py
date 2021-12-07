@@ -93,7 +93,7 @@ def frequency_train(corpus, query):
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
-    print(rank[:5])
+    return rank[:5]
 
 
 def process_corpus(corpus):
