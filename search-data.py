@@ -17,7 +17,7 @@ def print_top_5_entities(data, top_5_index, search_engine):
     """
     print("\n============================================================\n",
           search_engine, "     ||||   TOP-5 MOST SIMILAR ENTITIES (ASC)\n"
-          "============================================================")
+                         "============================================================")
     for elem in top_5_index:
         print("Python class:", data[elem]["name"],
               "\nFile:", data[elem]["file"],
@@ -25,16 +25,28 @@ def print_top_5_entities(data, top_5_index, search_engine):
               "\n------------------------------------------------------------")
 
 
+def read_corpus(corpus):
+    for i, line in enumerate(corpus):
+        yield gensim.models.doc2vec.TaggedDocument(line, [i])
+
 
 def doc2vec_train(corpus, query):
     """
     Represent entities using the doc2vec vectors with k = 300.
     :param corpus:
     """
-    # processed_corpus = need corpus processing
-    # use most_similar with topn=5 per le top 5 similar queries
-    doc2vec = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
-    print("Doc2Vec loaded!")
+    train_corpus = list(read_corpus(corpus))
+    model = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
+    model.build_vocab(train_corpus)
+    model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
+
+    vector = model.infer_vector(query.lower().split())
+    sims = model.docvecs.most_similar([vector], topn=5)
+
+    list_top_5_index = []
+    for label, index in [("FIRST", 0), ("SECOND", 1), ("THIRD", 2), ("FOURTH", 3), ("FIFTH", 4)]:
+        list_top_5_index.append(sims[index][0])
+    return list_top_5_index
 
 
 def lsi_train(corpus, query):
@@ -88,6 +100,7 @@ def frequency_train(corpus, query):
     top_5_index = get_top_5_index(similarity)
     return top_5_index
 
+
 def get_top_5_index(similarity):
     list_top_5_index = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
@@ -112,7 +125,29 @@ def remove_stopwords(text):
     STOPWORDS are from Gensim.
     """
     edited_stopwords = STOPWORDS.union(set(["test", "tests", "main"]))
-    edited_stopwords = edited_stopwords.difference({"False", "None", "True", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield", "ArithmeticError", "AssertionError", "AttributeError", "BaseException", "BlockingIOError", "BrokenPipeError", "BufferError", "BytesWarning", "ChildProcessError", "ConnectionAbortedError", "ConnectionError", "ConnectionRefusedError", "ConnectionResetError", "DeprecationWarning", "EOFError", "Ellipsis", "EnvironmentError", "Exception", "False", "FileExistsError", "FileNotFoundError", "FloatingPointError", "FutureWarning", "GeneratorExit", "IOError", "ImportError", "ImportWarning", "IndentationError", "IndexError", "InterruptedError", "IsADirectoryError", "KeyError", "KeyboardInterrupt", "LookupError", "MemoryError", "NameError", "None", "NotADirectoryError", "NotImplemented", "NotImplementedError", "OSError", "OverflowError", "PendingDeprecationWarning", "PermissionError", "ProcessLookupError", "RecursionError", "ReferenceError", "ResourceWarning", "RuntimeError", "RuntimeWarning", "StopAsyncIteration", "StopIteration", "SyntaxError", "SyntaxWarning", "SystemError", "SystemExit", "TabError", "TimeoutError", "True", "TypeError", "UnboundLocalError", "UnicodeDecodeError", "UnicodeEncodeError", "UnicodeError", "UnicodeTranslateError", "UnicodeWarning", "UserWarning", "ValueError", "Warning", "ZeroDivisionError", "_", "build_class", "debug", "doc", "import", "loader", "name", "package", "spec", "abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes", "callable", "chr", "classmethod", "compile", "complex", "copyright", "credits", "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exec", "exit", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", "iter", "len", "license", "list", "locals", "map", "max", "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "quit", "range", "repr", "reversed", "round", "get", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple", "type", "vars", "zip"})
+    edited_stopwords = edited_stopwords.difference(
+        {"False", "None", "True", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else",
+         "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or",
+         "pass", "raise", "return", "try", "while", "with", "yield", "ArithmeticError", "AssertionError",
+         "AttributeError", "BaseException", "BlockingIOError", "BrokenPipeError", "BufferError", "BytesWarning",
+         "ChildProcessError", "ConnectionAbortedError", "ConnectionError", "ConnectionRefusedError",
+         "ConnectionResetError", "DeprecationWarning", "EOFError", "Ellipsis", "EnvironmentError", "Exception", "False",
+         "FileExistsError", "FileNotFoundError", "FloatingPointError", "FutureWarning", "GeneratorExit", "IOError",
+         "ImportError", "ImportWarning", "IndentationError", "IndexError", "InterruptedError", "IsADirectoryError",
+         "KeyError", "KeyboardInterrupt", "LookupError", "MemoryError", "NameError", "None", "NotADirectoryError",
+         "NotImplemented", "NotImplementedError", "OSError", "OverflowError", "PendingDeprecationWarning",
+         "PermissionError", "ProcessLookupError", "RecursionError", "ReferenceError", "ResourceWarning", "RuntimeError",
+         "RuntimeWarning", "StopAsyncIteration", "StopIteration", "SyntaxError", "SyntaxWarning", "SystemError",
+         "SystemExit", "TabError", "TimeoutError", "True", "TypeError", "UnboundLocalError", "UnicodeDecodeError",
+         "UnicodeEncodeError", "UnicodeError", "UnicodeTranslateError", "UnicodeWarning", "UserWarning", "ValueError",
+         "Warning", "ZeroDivisionError", "_", "build_class", "debug", "doc", "import", "loader", "name", "package",
+         "spec", "abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes", "callable", "chr", "classmethod",
+         "compile", "complex", "copyright", "credits", "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exec",
+         "exit", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help", "hex", "id",
+         "input", "int", "isinstance", "issubclass", "iter", "len", "license", "list", "locals", "map", "max",
+         "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "quit", "range",
+         "repr", "reversed", "round", "get", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super",
+         "tuple", "type", "vars", "zip"})
     tokenized_text = text.split()
     words_filtered = [word for word in tokenized_text if word not in edited_stopwords]
     word = " ".join(words_filtered)
@@ -213,7 +248,8 @@ def main():
     print_top_5_entities(data, tf_idf_top_5, "TF IDF")
     lsi_top_5 = lsi_train(corpus, query)
     print_top_5_entities(data, lsi_top_5, "LSI")
-    # doc2vec_train(corpus, query)
+    doc2vec_top_5 = doc2vec_train(corpus, query)
+    print_top_5_entities(data, doc2vec_top_5, "DOC2VEC")
 
 
 if __name__ == "__main__":
