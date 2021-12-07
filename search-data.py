@@ -14,6 +14,7 @@ import requests
 import pprint
 import csv
 import re
+import json
 
 
 def print_top_5_entities():
@@ -174,13 +175,14 @@ def create_corpus():
     Create a corpus from the code entity names and comments.
     """
     data_raw = []
+    data_name_comment = []
     with open("data.csv") as csv_file:
         extracted_data = csv.DictReader(csv_file, delimiter=",") # ordered (Py>3.6)
         for row in extracted_data:
-            if row["comment"] != "":
+            #if row["comment"] != "":
                 data_raw.append([row["name"], row["comment"]])
-            else:
-                data_raw.append([row["name"], ""])
+            #else:
+                #data_raw.append([row["name"], ""])
 
     print(data_raw[:5])
 
@@ -189,8 +191,27 @@ def create_corpus():
     #print(data_final[:5])
     return data_standardization(data_raw)
 
+def extract_data():
+    """
+    Extract CSV in dict.
+    """
+    data_raw = []
+    with open("data.csv") as csv_file:
+        extracted_data = csv.DictReader(csv_file, delimiter=",") # ordered (Py>3.6)
+        for index, row in enumerate(extracted_data, start=2):
+            data_raw.append({
+                "csv_line": index,
+                "name": row["name"],
+                "file": row["file"],
+                "line": row["line"],
+                "type": row["type"],
+                "comment": row["comment"]
+            })
+    return data_raw
 
 def main():
+    data = extract_data()
+    print(json.dumps(data[:3], indent=3, default=str))
     corpus = create_corpus()
     query = "Optimizer that implements the Adadelta algorithm"
     frequency_train(corpus, query)
