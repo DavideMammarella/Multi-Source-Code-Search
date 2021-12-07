@@ -29,6 +29,7 @@ def doc2vec_train(corpus):
     :param corpus:
     """
     # processed_corpus = need corpus processing
+    #use most_similar with topn=5 per le top 5 similar queries
     doc2vec = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
     print("Doc2Vec loaded!")
 
@@ -119,7 +120,6 @@ def remove_stopwords(text):
 def underscore_split(text):
     """
     Split a text by underscore (e.g., go_to_myHome -> [go, to, my, home]).
-    Reference: stackoverflow.com/questions/29916065
 
     :param text: text to be splitted
     """
