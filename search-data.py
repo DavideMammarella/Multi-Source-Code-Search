@@ -18,8 +18,8 @@ def print_top_5_entities(data, top_5_index, search_engine):
     Given a query string, for each embedding print the top-5 most similar entities
     (entity name, file name, line of code), based on cosine similarity.
     """
-    print("============================================================\n",
-          search_engine, "            TOP-5 MOST SIMILAR ENTITIES (ASC)\n"
+    print("\n============================================================\n",
+          search_engine, "     ||||   TOP-5 MOST SIMILAR ENTITIES (ASC)\n"
           "============================================================")
     for elem in top_5_index:
         print("Python class:", data[elem]["name"],
@@ -55,17 +55,14 @@ def lsi_train(corpus, query):
     lsi = LsiModel(corpus_tfidf, id2word=dictionary, num_topics=300)
     corpus_lsi = lsi[corpus_tfidf]
 
-    print("LSI trained!")
-
     query_bow = dictionary.doc2bow(query.lower().split())
     vec_lsi = lsi[tfidf[query_bow]]
     index = MatrixSimilarity(corpus_lsi)
 
     similarity = index[vec_lsi]
-    rank = []
-    for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
-        rank.append([score, corpus[idx]])
-    # print(rank[:5])
+
+    top_5_index = get_top_5_index(similarity)
+    return top_5_index
 
 
 def tf_idf_train(corpus, query):
@@ -76,15 +73,15 @@ def tf_idf_train(corpus, query):
     processed_corpus = process_corpus(corpus)
     dictionary = Dictionary(processed_corpus)
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
+
     tfidf = TfidfModel(corpus_bow)
     tf_idf_index = SparseMatrixSimilarity(tfidf[corpus_bow], num_features=len(dictionary))
-    print("Tf_idf trained!")
+
     query_bow = dictionary.doc2bow(query.lower().split())
     similarity = tf_idf_index[query_bow]
-    rank = []
-    for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
-        rank.append([score, corpus[idx]])
-    # print(rank[:5])
+
+    top_5_index = get_top_5_index(similarity)
+    return top_5_index
 
 
 def frequency_train(corpus, query):
@@ -95,13 +92,12 @@ def frequency_train(corpus, query):
     processed_corpus = process_corpus(corpus)
     dictionary = Dictionary(processed_corpus)
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
+
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
-    print("Frequency trained!")
 
     query_bow = dictionary.doc2bow(query.lower().split())
     similarity = frequency_index[query_bow]
 
-    # return top 5 index
     top_5_index = get_top_5_index(similarity)
     return top_5_index
 
@@ -223,8 +219,10 @@ def main():
     query = "Optimizer that implements the Adadelta algorithm"
     freq_top_5 = frequency_train(corpus, query)
     print_top_5_entities(data, freq_top_5, "FREQ")
-    # tf_idf_train(corpus, query)
-    # lsi_train(corpus, query)
+    tf_idf_top_5 = tf_idf_train(corpus, query)
+    print_top_5_entities(data, tf_idf_top_5, "TF IDF")
+    lsi_top_5 = lsi_train(corpus, query)
+    print_top_5_entities(data, lsi_top_5, "LSI")
     # doc2vec_train(corpus, query)
 
 
