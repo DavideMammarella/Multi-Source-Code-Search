@@ -3,25 +3,23 @@ import importlib
 
 search_data = importlib.import_module("search-data")
 
-def query_search_engine(ground_truth):
+def query_search_engine(ground_truth, data):
     """
     Querying search engines given a dictionary of queries.
     :return:
     """
     queries_list = [d["query"] for d in ground_truth]
-    corpus = search_data.create_corpus()
+    corpus = search_data.create_corpus(data)
     top_5 = []
-    top_5_freq = []
     for query in queries_list:
-        top_5_freq.append({  # Add a dictionary to the data with:
-            "search engine": "FREQ",
-            "query": query,  # First line: name
-            "top 5": search_data.frequency_train(corpus, query)
+        top_5.append({
+            "query": query,
+            "top_5_FREQ": search_data.frequency_train(corpus, query),
+            "top_5_TF_IDF": search_data.tf_idf_train(corpus, query),
+            "top_5_LSI": search_data.lsi_train(corpus, query)
+            #"top_5_DOC2VEC": search_data.doc2vec_train(corpus, query)
         })
-        # top_5_tf_idf = search_data.tf_idf_train(corpus, query)
-        # top_5_lsi = search_data.lsi_train(corpus, query)
-        # top_5_doc2vec = search_data.doc2vec_train(corpus, query)
-    print(json.dumps(top_5_freq, indent=2, default=str))
+    print(json.dumps(top_5, indent=1, default=str))
 
 def ground_truth_txt_to_dict():
     """
@@ -56,11 +54,18 @@ def ground_truth_txt_to_dict():
 
     return ground_truth
     #print(json.dumps(ground_truth, indent=3, default=str))
-    #print("Number of queries: ", len(ground_truth))
+
+
+
 
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
-    query_search_engine(ground_truth_dict_list)
+    data = search_data.extract_data()
+    query_data = query_search_engine(ground_truth_dict_list, data)
+
+    # ho una lista di dizionari con tutti i dati di tensorflow = data
+    # ho una lista di dizionari con tutte le top 5 per ogni query (con index)
+    # effettua misure analizzando questi dizionari
 
 if __name__ == "__main__":
     main()
