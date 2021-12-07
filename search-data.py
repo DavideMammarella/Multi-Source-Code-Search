@@ -1,17 +1,13 @@
 # Hints:
-# • Refer to the Python examples in THEO-10-gensim.pdf and to the Python scripts mentioned in the slides and available on iCorsi
 # • Sort the documents in the corpus by similarity to get the top-5 entities most similar to the query for FREQ, TF-IDF, LSI
 # • Use function most_similar with topn=5 to get the top-5 entities most similar to the query for Doc2Vec
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
 from gensim.parsing.preprocessing import remove_stopwords
 from gensim.parsing.preprocessing import STOPWORDS
-from gensim.models import TfidfModel, LsiModel, LdaModel
+from gensim.models import TfidfModel, LsiModel
 from gensim.corpora import Dictionary
 from collections import defaultdict
-import gensim.corpora as cp
 import gensim
-import requests
-import pprint
 import csv
 import re
 import json
@@ -30,9 +26,10 @@ def doc2vec_train(corpus, query):
     :param corpus:
     """
     # processed_corpus = need corpus processing
-    #use most_similar with topn=5 per le top 5 similar queries
+    # use most_similar with topn=5 per le top 5 similar queries
     doc2vec = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
     print("Doc2Vec loaded!")
+
 
 def lsi_train(corpus, query):
     """
@@ -59,7 +56,8 @@ def lsi_train(corpus, query):
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
-    #print(rank[:5])
+    # print(rank[:5])
+
 
 def tf_idf_train(corpus, query):
     """
@@ -77,7 +75,8 @@ def tf_idf_train(corpus, query):
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
-    #print(rank[:5])
+    # print(rank[:5])
+
 
 def frequency_train(corpus, query):
     """
@@ -110,97 +109,87 @@ def process_corpus(corpus):
 
 
 def remove_stopwords(text):
-    all_stopwords_gensim = STOPWORDS.union(set(["test", "tests", "main"]))
-    all_stopwords_gensim = all_stopwords_gensim.difference({"get", "set"})
+    """
+    STOPWORDS are from Gensim.
+    """
+    edited_stopwords = STOPWORDS.union(set(["test", "tests", "main"]))
+    edited_stopwords = edited_stopwords.difference({"False", "None", "True", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield", "ArithmeticError", "AssertionError", "AttributeError", "BaseException", "BlockingIOError", "BrokenPipeError", "BufferError", "BytesWarning", "ChildProcessError", "ConnectionAbortedError", "ConnectionError", "ConnectionRefusedError", "ConnectionResetError", "DeprecationWarning", "EOFError", "Ellipsis", "EnvironmentError", "Exception", "False", "FileExistsError", "FileNotFoundError", "FloatingPointError", "FutureWarning", "GeneratorExit", "IOError", "ImportError", "ImportWarning", "IndentationError", "IndexError", "InterruptedError", "IsADirectoryError", "KeyError", "KeyboardInterrupt", "LookupError", "MemoryError", "NameError", "None", "NotADirectoryError", "NotImplemented", "NotImplementedError", "OSError", "OverflowError", "PendingDeprecationWarning", "PermissionError", "ProcessLookupError", "RecursionError", "ReferenceError", "ResourceWarning", "RuntimeError", "RuntimeWarning", "StopAsyncIteration", "StopIteration", "SyntaxError", "SyntaxWarning", "SystemError", "SystemExit", "TabError", "TimeoutError", "True", "TypeError", "UnboundLocalError", "UnicodeDecodeError", "UnicodeEncodeError", "UnicodeError", "UnicodeTranslateError", "UnicodeWarning", "UserWarning", "ValueError", "Warning", "ZeroDivisionError", "_", "build_class", "debug", "doc", "import", "loader", "name", "package", "spec", "abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes", "callable", "chr", "classmethod", "compile", "complex", "copyright", "credits", "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exec", "exit", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help", "hex", "id", "input", "int", "isinstance", "issubclass", "iter", "len", "license", "list", "locals", "map", "max", "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "quit", "range", "repr", "reversed", "round", "get", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super", "tuple", "type", "vars", "zip"})
     tokenized_text = text.split()
-    words_filtered = [word for word in tokenized_text if word not in all_stopwords_gensim]
+    words_filtered = [word for word in tokenized_text if word not in edited_stopwords]
     word = " ".join(words_filtered)
     return word
 
 
-def underscore_split(text):
+def comment_standardization(data):
     """
-    Split a text by underscore (e.g., go_to_myHome -> [go, to, my, home]).
-
-    :param text: text to be splitted
+    Standardize a comment:
+    1. split entity names (by CamelCase and underscore)
+    2. filter stopwords = {test, tests, main}
+    3. convert all words to lowercase
+    4. add additional filters for comments
+    :param data: ["name", "comment"]
     """
-    matches = text.split("_")
-    return matches
+    words = data.replace("_", " ")  # split by underscore
+    words = re.sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r" \1", words)  # split by CamelCase
+    words = remove_stopwords(words)  # remove stopwords
+    words = words.lower()  # convert to lowercase
+    words = re.sub(r"\((.*?)\)", r"", words)  # remove text in brackets (delete examples)
+    words = re.sub(r"(->)+", r" ", words)  # remove ->
+    words = re.sub(r"(\s+)", r" ", words)  # replace multiple whitespaces with a single one
+    words = re.sub(r"( \. )+", r" ", words)  # replace dot with  double spaces
+    words = words.split(". ")
+
+    return words
 
 
-def camel_case_split(text):
+def method_name_standardization(data):
     """
-    Split a text by CamelCase (works with: ABCdef, AbcDef, abcDef, abcDEF)
-    Reference: stackoverflow.com/questions/29916065
-
-    :param text: text to be splitted
-    """
-    matches = re.finditer(".+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)", text)
-    return [m.group(0) for m in matches]
-
-
-def data_standardization(data):
-    """
-    Standardize a text:
+    Standardize a method name:
     1. split entity names (by CamelCase and underscore)
     2. filter stopwords = {test, tests, main}
     3. convert all words to lowercase
     :param data: ["name", "comment"]
     """
-    data_standardized = []
-    words_standardized = []
-    words_standardized2 = []
+    words = data.replace("_", " ")  # split by underscore
+    words = re.sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r" \1", words)  # split by CamelCase
+    words = remove_stopwords(words)  # remove stopwords
+    words = words.lower()  # convert to lowercase
+    words = words.split()  # create a list of separated words
 
-    for name, comment in data:
-        # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
-        words_no_underscore = underscore_split(name) + underscore_split(comment)
-        # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
-        for word in words_no_underscore:
-            words_no_camel_case = camel_case_split(word)
-            words_standardized.extend(words_no_camel_case)
-        # il seguente si può ottimizzare splittando nella lista e ritornando la lista.
-        for word in words_standardized:
-            words_no_stopwords = remove_stopwords(word)
-            words_standardized2.append(words_no_stopwords)
-        data_standardized += [words_standardized2]
-        words_standardized = []
-        words_standardized2 = []
-
-    # print(data_standardized)
-    return data_standardized
+    return words
 
 
-def create_corpus():
+def create_corpus(data):
     """
     Create a corpus from the code entity names and comments.
     """
-    data_raw = []
-    data_name_comment = []
-    with open("data.csv") as csv_file:
-        extracted_data = csv.DictReader(csv_file, delimiter=",") # ordered (Py>3.6)
-        for row in extracted_data:
-            #if row["comment"] != "":
-                data_raw.append([row["name"], row["comment"]])
-            #else:
-                #data_raw.append([row["name"], ""])
+    data_name_comment_standardized = []
+    for index, row in enumerate(data, start=2):
+        data_name_comment_standardized.append({
+            "csv_line": str(index),
+            "name": method_name_standardization(row["name"]),
+            "comment": comment_standardization(row["comment"])
+        })
+    # print(json.dumps(data_name_comment_standardized[58], indent=3, default=str))
+    # print(json.dumps(data_name_comment_standardized[40], indent=3, default=str))
+    # print(json.dumps(data_name_comment_standardized[63], indent=3, default=str))
+    # fino a qui ho gli index
 
-    print(data_raw[:5])
+    # crea corpus, estrai [[nome1, commento1],[nome2, commento2]]
 
-    # estrai i nomi e commenti e li parsi (l'ordine é lo stesso di quello con cui li hai estratti)
-    data_final = data_standardization(data_raw)
-    #print(data_final[:5])
-    return data_standardization(data_raw)
+    return []
+
 
 def extract_data():
     """
-    Extract CSV in dict.
+    CSV to DICT with indexing
     """
     data_raw = []
     with open("data.csv") as csv_file:
-        extracted_data = csv.DictReader(csv_file, delimiter=",") # ordered (Py>3.6)
+        extracted_data = csv.DictReader(csv_file, delimiter=",")  # ordered (Py>3.6)
         for index, row in enumerate(extracted_data, start=2):
             data_raw.append({
-                "csv_line": index,
+                "csv_line": str(index),
                 "name": row["name"],
                 "file": row["file"],
                 "line": row["line"],
@@ -209,16 +198,18 @@ def extract_data():
             })
     return data_raw
 
+
 def main():
     data = extract_data()
-    print(json.dumps(data[:3], indent=3, default=str))
-    corpus = create_corpus()
-    query = "Optimizer that implements the Adadelta algorithm"
-    frequency_train(corpus, query)
-    tf_idf_train(corpus, query)
-    lsi_train(corpus, query)
-    doc2vec_train(corpus, query)
-    print_top_5_entities()
+    # print(json.dumps(data[-1:], indent=3, default=str))
+    corpus = create_corpus(data)
+    # print(corpus[-1:])
+    # query = "Optimizer that implements the Adadelta algorithm"
+    # frequency_train(corpus, query)
+    # tf_idf_train(corpus, query)
+    # lsi_train(corpus, query)
+    # doc2vec_train(corpus, query)
+    # print_top_5_entities()
 
 
 if __name__ == "__main__":
