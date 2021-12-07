@@ -41,7 +41,7 @@ def doc2vec_train(corpus, query):
     model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
 
     vector = model.infer_vector(query.lower().split())
-    sims = model.docvecs.most_similar([vector], topn=5)
+    sims = model.dv.most_similar([vector], topn=5)
 
     list_top_5_index = []
     for label, index in [("FIRST", 0), ("SECOND", 1), ("THIRD", 2), ("FOURTH", 3), ("FIFTH", 4)]:
