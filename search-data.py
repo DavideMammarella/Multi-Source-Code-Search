@@ -23,7 +23,7 @@ def print_top_5_entities():
     """
 
 
-def doc2vec_train(corpus):
+def doc2vec_train(corpus, query):
     """
     Represent entities using the doc2vec vectors with k = 300.
     :param corpus:
@@ -33,7 +33,7 @@ def doc2vec_train(corpus):
     doc2vec = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
     print("Doc2Vec loaded!")
 
-def lsi_train(corpus):
+def lsi_train(corpus, query):
     """
     Represent entities using the LSI vectors with k = 300.
     :param corpus:
@@ -50,8 +50,7 @@ def lsi_train(corpus):
 
     print("LSI trained!")
 
-    query_document = "Optimizer that implements the Adadelta algorithm".lower().split()
-    query_bow = dictionary.doc2bow(query_document)
+    query_bow = dictionary.doc2bow(query.lower().split())
     vec_lsi = lsi[tfidf[query_bow]]
     index = MatrixSimilarity(corpus_lsi)
 
@@ -61,7 +60,7 @@ def lsi_train(corpus):
         rank.append([score, corpus[idx]])
     print(rank[:5])
 
-def tf_idf_train(corpus):
+def tf_idf_train(corpus, query):
     """
     Represent entities using the TF-IDF vectors.
     :param corpus:
@@ -72,15 +71,14 @@ def tf_idf_train(corpus):
     tfidf = TfidfModel(corpus_bow)
     tf_idf_index = SparseMatrixSimilarity(tfidf[corpus_bow], num_features=len(dictionary))
     print("Tf_idf trained!")
-    query_document = "Optimizer that implements the Adadelta algorithm".lower().split()
-    query_bow = dictionary.doc2bow(query_document)
+    query_bow = dictionary.doc2bow(query.lower().split())
     similarity = tf_idf_index[query_bow]
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
     print(rank[:5])
 
-def frequency_train(corpus):
+def frequency_train(corpus, query):
     """
     Represent entities using the FREQ (frequency) vectors.
     :param corpus: processed corpus
@@ -90,8 +88,7 @@ def frequency_train(corpus):
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
     print("Frequency trained!")
-    query_document = "Optimizer that implements the Adadelta algorithm".lower().split()
-    query_bow = dictionary.doc2bow(query_document)
+    query_bow = dictionary.doc2bow(query.lower().split())
     similarity = frequency_index[query_bow]
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
@@ -186,10 +183,11 @@ def create_corpus():
 
 def main():
     corpus = create_corpus()
-    frequency_train(corpus)
-    tf_idf_train(corpus)
-    lsi_train(corpus)
-    doc2vec_train(corpus)
+    query = "Optimizer that implements the Adadelta algorithm"
+    frequency_train(corpus, query)
+    tf_idf_train(corpus, query)
+    lsi_train(corpus, query)
+    doc2vec_train(corpus, query)
     print_top_5_entities()
 
 
