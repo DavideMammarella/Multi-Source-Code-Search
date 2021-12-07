@@ -58,7 +58,7 @@ def lsi_train(corpus, query):
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
-    print(rank[:5])
+    #print(rank[:5])
 
 def tf_idf_train(corpus, query):
     """
@@ -76,7 +76,7 @@ def tf_idf_train(corpus, query):
     rank = []
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
-    print(rank[:5])
+    #print(rank[:5])
 
 def frequency_train(corpus, query):
     """
@@ -88,9 +88,12 @@ def frequency_train(corpus, query):
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
     print("Frequency trained!")
+
     query_bow = dictionary.doc2bow(query.lower().split())
     similarity = frequency_index[query_bow]
+
     rank = []
+    # return score and corpus
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
     return rank[:5]
@@ -172,12 +175,18 @@ def create_corpus():
     """
     data_raw = []
     with open("data.csv") as csv_file:
-        extracted_data = csv.DictReader(csv_file, delimiter=",")
+        extracted_data = csv.DictReader(csv_file, delimiter=",") # ordered (Py>3.6)
         for row in extracted_data:
             if row["comment"] != "":
                 data_raw.append([row["name"], row["comment"]])
+            else:
+                data_raw.append([row["name"], ""])
 
-    # print(data_raw)
+    print(data_raw[:5])
+
+    # estrai i nomi e commenti e li parsi (l'ordine é lo stesso di quello con cui li hai estratti)
+    data_final = data_standardization(data_raw)
+    #print(data_final[:5])
     return data_standardization(data_raw)
 
 

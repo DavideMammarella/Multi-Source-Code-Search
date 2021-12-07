@@ -11,15 +11,17 @@ def query_search_engine(ground_truth):
     queries_list = [d["query"] for d in ground_truth]
     corpus = search_data.create_corpus()
     top_5 = []
+    top_5_freq = []
     for query in queries_list:
-        top_5_freq = search_data.frequency_train(corpus, query)
-        top_5_tf_idf = search_data.tf_idf_train(corpus, query)
-        top_5_lsi = search_data.lsi_train(corpus, query)
-        top_5_doc2vec = search_data.doc2vec_train(corpus, query)
-        # crea un dizionario con
-        # query : ""
-        # top_5_... : ""
-    print(queries_list)
+        top_5_freq.append({  # Add a dictionary to the data with:
+            "search engine": "FREQ",
+            "query": query,  # First line: name
+            "top 5": search_data.frequency_train(corpus, query)
+        })
+        # top_5_tf_idf = search_data.tf_idf_train(corpus, query)
+        # top_5_lsi = search_data.lsi_train(corpus, query)
+        # top_5_doc2vec = search_data.doc2vec_train(corpus, query)
+    print(json.dumps(top_5_freq, indent=2, default=str))
 
 def ground_truth_txt_to_dict():
     """
