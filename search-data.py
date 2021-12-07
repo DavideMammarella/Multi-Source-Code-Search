@@ -96,7 +96,7 @@ def frequency_train(corpus, query):
     # return score and corpus
     for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
         rank.append([score, corpus[idx]])
-    return rank[:5]
+    print(rank[:5])
 
 
 def process_corpus(corpus):
@@ -173,11 +173,13 @@ def create_corpus(data):
     # print(json.dumps(data_name_comment_standardized[58], indent=3, default=str))
     # print(json.dumps(data_name_comment_standardized[40], indent=3, default=str))
     # print(json.dumps(data_name_comment_standardized[63], indent=3, default=str))
-    # fino a qui ho gli index
 
-    # crea corpus, estrai [[nome1, commento1],[nome2, commento2]]
+    corpus = []
+    for dict in data_name_comment_standardized:
+        name_and_comment = dict["name"] + dict["comment"]
+        corpus.append(name_and_comment)
 
-    return []
+    return corpus
 
 
 def extract_data():
@@ -203,9 +205,10 @@ def main():
     data = extract_data()
     # print(json.dumps(data[-1:], indent=3, default=str))
     corpus = create_corpus(data)
-    # print(corpus[-1:])
-    # query = "Optimizer that implements the Adadelta algorithm"
-    # frequency_train(corpus, query)
+    # print(corpus[:2])
+    # print(corpus[-2:])
+    query = "Optimizer that implements the Adadelta algorithm"
+    frequency_train(corpus, query)
     # tf_idf_train(corpus, query)
     # lsi_train(corpus, query)
     # doc2vec_train(corpus, query)
