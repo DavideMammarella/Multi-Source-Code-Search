@@ -17,8 +17,8 @@ def query_search_engine(ground_truth, data):
             "ground_truth_file_name": name,
             "ground_truth_file": file,
             "top_5_FREQ": search_data.frequency_train(corpus, query)
-            # ,"top_5_TF_IDF": search_data.tf_idf_train(corpus, query)
-            # ,"top_5_LSI": search_data.lsi_train(corpus, query)
+            ,"top_5_TF_IDF": search_data.tf_idf_train(corpus, query)
+            ,"top_5_LSI": search_data.lsi_train(corpus, query)
             #,"top_5_DOC2VEC": search_data.doc2vec_train(corpus, query)
         })
     return top_5
@@ -53,10 +53,12 @@ def get_position_from_data(expected_name, expected_file, data):
 
 
 def get_POS_list(expected_line, top_5_index):
+    expected_line = int(expected_line)
+    top_5_index = list(map(int, top_5_index))
     pos_list = []
-    for idx, index in enumerate(top_5_index):
-        if index == expected_line:
-            pos_list.append(idx)
+    for index, item in enumerate(top_5_index):
+        if item == expected_line:
+            pos_list.append(index)
         else:
             pos_list.append(0)
     return pos_list
@@ -70,7 +72,11 @@ def measure_precision_and_recall(ground_truth, data, query_data):
         expected_line = get_position_from_data(expected_name, expected_file, data) # é giá +2 perché lo ha preso da extracted_data
         # print(expected_line, expected_name, expected_file)
         top_5_FREQ_POS = get_POS_list(expected_line, d["top_5_FREQ"])
+        top_5_TFID_POS = get_POS_list(expected_line, d["top_5_TF_IDF"])
+        top_5_LSI_POS = get_POS_list(expected_line, d["top_5_LSI"])
         d.update({"top_5_FREQ": top_5_FREQ_POS})
+        d.update({"top_5_TF_IDF": top_5_TFID_POS})
+        d.update({"top_5_LSI": top_5_LSI_POS})
     print(json.dumps(query_data, indent=1))
 
     # top_5_FREQ_prec calcoli la precisione per ogni query 1/sum(POS)
@@ -81,9 +87,6 @@ def main():
     data = search_data.extract_data()
     query_data = query_search_engine(ground_truth_dict_list, data)
     measure_precision_and_recall(ground_truth_dict_list, data, query_data)
-    # ho una lista di dizionari con tutti i dati di tensorflow = data
-    # ho una lista di dizionari con tutte le top 5 per ogni query (con index)
-    # effettua misure analizzando questi dizionari
 
 if __name__ == "__main__":
     main()
