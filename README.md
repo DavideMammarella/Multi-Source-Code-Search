@@ -30,3 +30,9 @@ Train search engines (FREQ, TF-IDF, LSI, Doc2Vec) with the following command:
 ```
 python3 search-data.py
 ```
+
+#### Evaluate search engines
+Evaluate average precision and recall for every search engines (FREQ, TF-IDF, LSI, Doc2Vec) against the `ground-truth-unique.txt` file, with the following command:
+```
+python3 prec-recall.py
+```
