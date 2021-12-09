@@ -198,7 +198,7 @@ def create_corpus(data):
     Create a corpus from the code entity names and comments.
     """
     data_name_comment_standardized = []
-    for index, row in enumerate(data, start=2):
+    for index, row in enumerate(data):
         data_name_comment_standardized.append({
             "csv_line": str(index),
             "name": method_name_standardization(row["name"]),
@@ -223,7 +223,7 @@ def extract_data():
     data_raw = []
     with open("data.csv") as csv_file:
         extracted_data = csv.DictReader(csv_file, delimiter=",")  # ordered (Py>3.6)
-        for index, row in enumerate(extracted_data, start=2):
+        for index, row in enumerate(extracted_data):
             data_raw.append({
                 "csv_line": str(index),
                 "name": row["name"],
