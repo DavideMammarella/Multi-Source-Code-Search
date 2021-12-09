@@ -49,8 +49,17 @@ def get_position_from_data(expected_name, expected_file, data):
     for d in data:
         values = list(d.values())
         if all(x in values for x in [expected_name, expected_file]):
-            return d["csv_line"]
+            return int(d["csv_line"])
 
+
+def get_POS_list(expected_line, top_5_index):
+    pos_list = []
+    for idx, index in enumerate(top_5_index):
+        if index == expected_line:
+            pos_list.append(idx)
+        else:
+            pos_list.append(0)
+    return pos_list
 
 
 def measure_precision_and_recall(ground_truth, data, query_data):
@@ -58,13 +67,14 @@ def measure_precision_and_recall(ground_truth, data, query_data):
     for d in query_data: # prendi un dizionario
         expected_name = d["ground_truth_file_name"]
         expected_file = d["ground_truth_file"]
-        expected_line = get_position_from_data(expected_name, expected_file, data)
-        print(expected_line, expected_name, expected_file)
-    # analizzi ogni dizionario separatamente e lo updati
-    # top_5_FREQ_POS (se la risposta é corretta (stesso nome e file name) allora mettici la posizione che ha in lista, oppure 0
+        expected_line = get_position_from_data(expected_name, expected_file, data) # é giá +2 perché lo ha preso da extracted_data
+        # print(expected_line, expected_name, expected_file)
+        top_5_FREQ_POS = get_POS_list(expected_line, d["top_5_FREQ"])
+        d.update({"top_5_FREQ": top_5_FREQ_POS})
+    print(json.dumps(query_data, indent=1))
+
     # top_5_FREQ_prec calcoli la precisione per ogni query 1/sum(POS)
-    # ribalti i dizionari, devi creare una lista per ogni search engine list_FREQ, list_TFID in cui all'interno ho dizionari
-    # con query
+    # ribalti i dizionari, devi creare una lista per ogni search engine list_FREQ, list_TFID in cui all'interno ho dizionari con query
 
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
