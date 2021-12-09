@@ -56,31 +56,73 @@ def get_POS_list(expected_line, top_5_index):
     expected_line = int(expected_line)
     top_5_index = list(map(int, top_5_index))
     pos_list = []
-    for index, item in enumerate(top_5_index):
+    for index, item in enumerate(top_5_index, start=1):
         if item == expected_line:
             pos_list.append(index)
         else:
             pos_list.append(0)
     return pos_list
 
+def get_precision(top_5_POS):
+    top_5_POS = list(map(int, top_5_POS))
+
+    try:
+        result = 1/sum(top_5_POS)
+    except:
+        result = 0
+
+    return result
+
+def get_correct_answer(top_5_POS):
+    top_5_POS = list(map(int, top_5_POS))
+    count = 0
+
+    for answer in top_5_POS:
+        if answer != 0:
+            count = count + 1
+
+    return count
+
 
 def measure_precision_and_recall(ground_truth, data, query_data):
     #print(json.dumps(query_data, indent=1))
+    # populate dictionary with precision and recall
     for d in query_data: # prendi un dizionario
         expected_name = d["ground_truth_file_name"]
         expected_file = d["ground_truth_file"]
-        expected_line = get_position_from_data(expected_name, expected_file, data) # é giá +2 perché lo ha preso da extracted_data
+        expected_line = get_position_from_data(expected_name, expected_file, data)
         # print(expected_line, expected_name, expected_file)
+
         top_5_FREQ_POS = get_POS_list(expected_line, d["top_5_FREQ"])
-        top_5_TFID_POS = get_POS_list(expected_line, d["top_5_TF_IDF"])
-        top_5_LSI_POS = get_POS_list(expected_line, d["top_5_LSI"])
+        top_5_FREQ_prec = get_precision(top_5_FREQ_POS)
+        top_5_FREQ_correct = get_correct_answer(top_5_FREQ_POS)
         d.update({"top_5_FREQ": top_5_FREQ_POS})
-        d.update({"top_5_TF_IDF": top_5_TFID_POS})
+        d.update({"top_5_FREQ_prec": top_5_FREQ_prec})
+        d.update({"top_5_FREQ_correct": top_5_FREQ_correct})
+
+        top_5_TF_IDF_POS = get_POS_list(expected_line, d["top_5_TF_IDF"])
+        top_5_TF_IDF_prec = get_precision(top_5_TF_IDF_POS)
+        top_5_TF_IDF_correct = get_correct_answer(top_5_TF_IDF_POS)
+        d.update({"top_5_TF_IDF": top_5_TF_IDF_POS})
+        d.update({"top_5_TF_IDF_prec": top_5_TF_IDF_prec})
+        d.update({"top_5_TF_IDF_correct": top_5_TF_IDF_correct})
+
+        top_5_LSI_POS = get_POS_list(expected_line, d["top_5_LSI"])
+        top_5_LSI_prec = get_precision(top_5_LSI_POS)
+        top_5_LSI_correct = get_correct_answer(top_5_LSI_POS)
         d.update({"top_5_LSI": top_5_LSI_POS})
+        d.update({"top_5_LSI_prec": top_5_LSI_prec})
+        d.update({"top_5_LSI_correct": top_5_LSI_correct})
+
+        #top_5_DOC2VEC_POS = get_POS_list(expected_line, d["top_5_DOC2VEC"])
+        #top_5_DOC2VEC_prec = get_precision(top_5_DOC2VEC_POS)
+        #top_5_DOC2VEC_correct = get_correct_answer(top_5_DOC2VEC_POS)
+        #d.update({"top_5_DOC2VEC": top_5_DOC2VEC_POS})
+        #d.update({"top_5_DOC2VEC_prec": top_5_DOC2VEC_prec})
+        #d.update({"top_5_DOC2VEC_correct": top_5_DOC2VEC_correct})
     print(json.dumps(query_data, indent=1))
 
-    # top_5_FREQ_prec calcoli la precisione per ogni query 1/sum(POS)
-    # ribalti i dizionari, devi creare una lista per ogni search engine list_FREQ, list_TFID in cui all'interno ho dizionari con query
+    # iterate every dictionary and create a dictionary for the 4 search engines
 
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
