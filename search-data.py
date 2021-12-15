@@ -1,16 +1,15 @@
-import os
-
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from gensim.parsing.preprocessing import remove_stopwords
 from gensim.parsing.preprocessing import STOPWORDS
 from gensim.models import TfidfModel, LsiModel
-from gensim.corpora import Dictionary
+from gensim.corpora import Dictionary, MmCorpus
 from collections import defaultdict
+from pathlib import Path
 import gensim
 import csv
 import re
-import json
+import os
 
 
 def print_top_5_entities(data, top_5_index, search_engine):
@@ -33,7 +32,8 @@ def read_corpus(corpus):
         yield gensim.models.doc2vec.TaggedDocument(line, [i])
 
 
-def doc2vec_query(model, query):
+def doc2vec_query(query):
+    model = Doc2Vec.load("utils/doc2vec/model")
     vector = model.infer_vector(query.lower().split())
     sims = model.dv.most_similar([vector], topn=5)
 
@@ -44,26 +44,26 @@ def doc2vec_query(model, query):
 
 
 def doc2vec_train(corpus):
+    Path("utils/doc2vec").mkdir(parents=True, exist_ok=True)
     train_corpus = list(read_corpus(corpus))
-    model = Doc2Vec(vector_size=300, min_count=2, epochs=40)
-    model.build_vocab(train_corpus)
-    model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
 
-    model.save("models/doc2vec")
+    if os.path.exists("utils/doc2vec/model"):
+        model = Doc2Vec.load("utils/doc2vec/model")
+    else:
+        model = Doc2Vec(vector_size=300, min_count=2, epochs=40)
+        model.build_vocab(train_corpus)
+        model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
+        model.save("utils/doc2vec/model")
+
+    return model
 
 
-def lsi_train(corpus, query):
-    """
-    Represent entities using the LSI vectors with k = 300.
-    :param corpus:
-    """
-    dictionary, query_bow, corpus_bow = process_corpus_dictionary_query(corpus, query)
+def lsi_query(query):
+    tfidf = TfidfModel.load("utils/tf_idf/model")
+    lsi = LsiModel.load("utils/lsi/model")
+    corpus_lsi = MmCorpus("utils/corpus_lsi")
 
-    tfidf = TfidfModel(corpus_bow)
-    corpus_tfidf = tfidf[corpus_bow]
-
-    lsi = LsiModel(corpus_tfidf, id2word=dictionary, num_topics=300)
-    corpus_lsi = lsi[corpus_tfidf]
+    query_bow = process_query(query)
 
     vec_lsi = lsi[tfidf[query_bow]]
     index = MatrixSimilarity(corpus_lsi)
@@ -74,34 +74,83 @@ def lsi_train(corpus, query):
     return top_5_index
 
 
-def tf_idf_train(corpus, query):
-    """
-    Represent entities using the TF-IDF vectors.
-    :param corpus:
-    """
-    dictionary, query_bow, corpus_bow = process_corpus_dictionary_query(corpus, query)
+def lsi_train(corpus):
+    if os.path.exists("utils/corpus"):
+        corpus_bow = MmCorpus("utils/corpus")
+    else:
+        corpus_bow = process_corpus(corpus)
+    Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
+    Path("utils/lsi").mkdir(parents=True, exist_ok=True)
+    dictionary = Dictionary.load("utils/dictionary")
 
-    tfidf = TfidfModel(corpus_bow)
-    tf_idf_index = SparseMatrixSimilarity(tfidf[corpus_bow], num_features=len(dictionary))
+    if os.path.exists("utils/tf_idf/model"):
+        tfidf = TfidfModel.load("utils/tf_idf/model")
+    else:
+        tfidf = TfidfModel(corpus_bow)
+        tfidf.save("utils/tf_idf/model")
+    corpus_tf_idf = tfidf[corpus_bow]
 
-    similarity = tf_idf_index[query_bow]
+    if os.path.exists("utils/lsi/model"):
+        lsi = LsiModel.load("utils/lsi/model")
+    else:
+        lsi = LsiModel(corpus_tf_idf, id2word=dictionary, num_topics=300)
+        lsi.save("utils/lsi/model")
+    corpus_lsi = lsi[corpus_tf_idf]
 
-    top_5_index = get_top_5_index(similarity)
+    MmCorpus.serialize("utils/corpus_lsi", corpus_lsi)  # save corpus
+
+
+def tf_idf_query(query):
+    query_bow = process_query(query)
+
+    tf_idf_index = SparseMatrixSimilarity.load("utils/tf_idf/index")
+    sims = tf_idf_index[query_bow]
+
+    top_5_index = get_top_5_index(sims)
     return top_5_index
 
 
-def frequency_train(corpus, query):
-    """
-    Represent entities using the FREQ (frequency) vectors.
-    :param corpus: processed corpus
-    """
-    dictionary, query_bow, corpus_bow = process_corpus_dictionary_query(corpus, query)
+def tf_idf_train(corpus):
+    if os.path.exists("utils/corpus"):
+        corpus_bow = MmCorpus("utils/corpus")
+    else:
+        corpus_bow = process_corpus(corpus)
+    dictionary = Dictionary.load("utils/dictionary")
+    Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
+
+    if os.path.exists("utils/tf_idf/model"):
+        tfidf = TfidfModel.load("utils/tf_idf/model")
+    else:
+        tfidf = TfidfModel(corpus_bow)
+        tfidf.save("utils/tf_idf/model")
+
+    tf_idf_index = SparseMatrixSimilarity(tfidf[corpus_bow], num_features=len(dictionary))
+    tf_idf_index.save("utils/tf_idf/index")
+
+    return tfidf
+
+
+def frequency_query(query):
+    dictionary = Dictionary.load("utils/dictionary")
+    corpus_bow = MmCorpus("utils/freq/corpus")
 
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
+    query_bow = process_query(query)
+
     similarity = frequency_index[query_bow]
 
     top_5_index = get_top_5_index(similarity)
     return top_5_index
+
+
+def frequency_train(corpus):
+    if os.path.exists("utils/corpus"):
+        corpus_bow = MmCorpus("utils/corpus")
+    else:
+        corpus_bow = process_corpus(corpus)
+
+    Path("utils/freq").mkdir(parents=True, exist_ok=True)
+    MmCorpus.serialize("utils/freq/corpus", corpus_bow)
 
 
 def get_top_5_index(similarity):
@@ -111,7 +160,13 @@ def get_top_5_index(similarity):
     return list_top_5_index[:5]
 
 
-def process_corpus_dictionary_query(corpus, query):
+def process_query(query):
+    dictionary = Dictionary.load("utils/dictionary")
+    query_bow = dictionary.doc2bow(query.lower().split())
+    return query_bow
+
+
+def process_corpus(corpus):
     frequency = defaultdict(int)
     for text in corpus:
         for token in text:
@@ -119,8 +174,10 @@ def process_corpus_dictionary_query(corpus, query):
     processed_corpus = [[token for token in text if frequency[token] > 1] for text in corpus]
     dictionary = Dictionary(processed_corpus)
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
-    query_bow = dictionary.doc2bow(query.lower().split())
-    return dictionary, query_bow, corpus_bow
+
+    Path("utils").mkdir(parents=True, exist_ok=True)
+    dictionary.save("utils/dictionary")
+    MmCorpus.serialize("utils/corpus", corpus_bow)
 
 
 def remove_stopwords(text):
@@ -207,9 +264,6 @@ def create_corpus(data):
             "name": method_name_standardization(row["name"]),
             "comment": comment_standardization(row["comment"])
         })
-    # print(json.dumps(data_name_comment_standardized[58], indent=3, default=str))
-    # print(json.dumps(data_name_comment_standardized[40], indent=3, default=str))
-    # print(json.dumps(data_name_comment_standardized[63], indent=3, default=str))
 
     corpus = []
     for dict in data_name_comment_standardized:
@@ -240,21 +294,22 @@ def extract_data():
 
 def main():
     data = extract_data()
-    # print(json.dumps(data[-1:], indent=3, default=str))
     corpus = create_corpus(data)
-    # print(corpus[:2])
-    # print(corpus[-2:])
     query = "Optimizer that implements the Adadelta algorithm"
-    # freq_top_5 = frequency_train(corpus, query)
-    # print_top_5_entities(data, freq_top_5, "FREQ")
-    # tf_idf_top_5 = tf_idf_train(corpus, query)
-    # print_top_5_entities(data, tf_idf_top_5, "TF IDF")
-    # lsi_top_5 = lsi_train(corpus, query)
-    # print_top_5_entities(data, lsi_top_5, "LSI")
-    if not os.path.exists("models/doc2vec"):
-        doc2vec_train(corpus)
-    model = Doc2Vec.load("models/doc2vec")
-    doc2vec_top_5 = doc2vec_query(model, query)
+
+    frequency_train(corpus)
+    tf_idf_train(corpus)
+    lsi_train(corpus)
+    doc2vec_train(corpus)
+
+    freq_top_5 = frequency_query(query)
+    tf_idf_top_5 = tf_idf_query(query)
+    lsi_top_5 = lsi_query(query)
+    doc2vec_top_5 = doc2vec_query(query)
+
+    print_top_5_entities(data, freq_top_5, "FREQ")
+    print_top_5_entities(data, tf_idf_top_5, "TF IDF")
+    print_top_5_entities(data, lsi_top_5, "LSI")
     print_top_5_entities(data, doc2vec_top_5, "DOC2VEC")
 
 
