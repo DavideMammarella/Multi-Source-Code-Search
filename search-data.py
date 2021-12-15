@@ -75,10 +75,7 @@ def lsi_query(query):
 
 
 def lsi_train(corpus):
-    if os.path.exists("utils/corpus"):
-        corpus_bow = MmCorpus("utils/corpus")
-    else:
-        corpus_bow = process_corpus(corpus)
+    corpus_bow = MmCorpus("utils/corpus")
     Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
     Path("utils/lsi").mkdir(parents=True, exist_ok=True)
     dictionary = Dictionary.load("utils/dictionary")
@@ -111,10 +108,7 @@ def tf_idf_query(query):
 
 
 def tf_idf_train(corpus):
-    if os.path.exists("utils/corpus"):
-        corpus_bow = MmCorpus("utils/corpus")
-    else:
-        corpus_bow = process_corpus(corpus)
+    corpus_bow = MmCorpus("utils/corpus")
     dictionary = Dictionary.load("utils/dictionary")
     Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
 
@@ -131,8 +125,8 @@ def tf_idf_train(corpus):
 
 
 def frequency_query(query):
+    corpus_bow = MmCorpus("utils/corpus")
     dictionary = Dictionary.load("utils/dictionary")
-    corpus_bow = MmCorpus("utils/freq/corpus")
 
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
     query_bow = process_query(query)
@@ -141,16 +135,6 @@ def frequency_query(query):
 
     top_5_index = get_top_5_index(similarity)
     return top_5_index
-
-
-def frequency_train(corpus):
-    if os.path.exists("utils/corpus"):
-        corpus_bow = MmCorpus("utils/corpus")
-    else:
-        corpus_bow = process_corpus(corpus)
-
-    Path("utils/freq").mkdir(parents=True, exist_ok=True)
-    MmCorpus.serialize("utils/freq/corpus", corpus_bow)
 
 
 def get_top_5_index(similarity):
@@ -178,6 +162,8 @@ def process_corpus(corpus):
     Path("utils").mkdir(parents=True, exist_ok=True)
     dictionary.save("utils/dictionary")
     MmCorpus.serialize("utils/corpus", corpus_bow)
+
+    return corpus
 
 
 def remove_stopwords(text):
@@ -295,9 +281,9 @@ def extract_data():
 def main():
     data = extract_data()
     corpus = create_corpus(data)
+    process_corpus(corpus)
     query = "Optimizer that implements the Adadelta algorithm"
 
-    frequency_train(corpus)
     tf_idf_train(corpus)
     lsi_train(corpus)
     doc2vec_train(corpus)
