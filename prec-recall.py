@@ -1,8 +1,26 @@
-import json
+from gensim.corpora import MmCorpus
 import importlib
+import seaborn as sns
+import pandas as pd
+import json
+
+from sklearn.manifold import TSNE
 
 search_data = importlib.import_module("search-data")
 
+def get_embedding_vectors_lsi(query_data):
+    embeddings_vectors = []
+    corpus_lsi = MmCorpus("utils/corpus_lsi")
+    lsi_data = [d["top_5_LSI"] for d in query_data]
+    temp = []
+
+    for top_5 in lsi_data:
+        for index in top_5:
+            temp.append(corpus_lsi[index].pop())
+        embeddings_vectors.append(temp)
+
+    print(embeddings_vectors)
+    plot_tsne(embeddings_vectors)
 
 def query_search_engine(ground_truth):
     """
@@ -13,13 +31,13 @@ def query_search_engine(ground_truth):
     top_5 = []
     for query, name, file in queries_list:
         top_5.append({
-            "ground_truth_query": query,
-            "ground_truth_file_name": name,
-            "ground_truth_file": file,
-            "top_5_FREQ": search_data.frequency_query(query)
-            , "top_5_TF_IDF": search_data.tf_idf_query(query)
+            "ground_truth_query": query
+            ,"ground_truth_file_name": name
+            ,"ground_truth_file": file
+            # ,"top_5_FREQ": search_data.frequency_query(query)
+            # , "top_5_TF_IDF": search_data.tf_idf_query(query)
             , "top_5_LSI": search_data.lsi_query(query)
-            , "top_5_DOC2VEC": search_data.doc2vec_query(query)
+            #, "top_5_DOC2VEC": search_data.doc2vec_query(query)
         })
     #print(json.dumps(top_5, indent=1))
     return top_5
@@ -99,28 +117,28 @@ def update_query_data(query_data, data):
         top_5_FREQ_POS = get_POS_list(expected_line, d["top_5_FREQ"])
         top_5_FREQ_prec = get_precision(top_5_FREQ_POS)
         top_5_FREQ_correct = get_correct_answer(top_5_FREQ_POS)
-        d.update({"top_5_FREQ": top_5_FREQ_POS})
+        d.update({"top_5_FREQ_POS": top_5_FREQ_POS})
         d.update({"top_5_FREQ_prec": top_5_FREQ_prec})
         d.update({"top_5_FREQ_correct": top_5_FREQ_correct})
 
         top_5_TF_IDF_POS = get_POS_list(expected_line, d["top_5_TF_IDF"])
         top_5_TF_IDF_prec = get_precision(top_5_TF_IDF_POS)
         top_5_TF_IDF_correct = get_correct_answer(top_5_TF_IDF_POS)
-        d.update({"top_5_TF_IDF": top_5_TF_IDF_POS})
+        d.update({"top_5_TF_IDF_POS": top_5_TF_IDF_POS})
         d.update({"top_5_TF_IDF_prec": top_5_TF_IDF_prec})
         d.update({"top_5_TF_IDF_correct": top_5_TF_IDF_correct})
 
         top_5_LSI_POS = get_POS_list(expected_line, d["top_5_LSI"])
         top_5_LSI_prec = get_precision(top_5_LSI_POS)
         top_5_LSI_correct = get_correct_answer(top_5_LSI_POS)
-        d.update({"top_5_LSI": top_5_LSI_POS})
+        d.update({"top_5_LSI_POS": top_5_LSI_POS})
         d.update({"top_5_LSI_prec": top_5_LSI_prec})
         d.update({"top_5_LSI_correct": top_5_LSI_correct})
 
         top_5_DOC2VEC_POS = get_POS_list(expected_line, d["top_5_DOC2VEC"])
         top_5_DOC2VEC_prec = get_precision(top_5_DOC2VEC_POS)
         top_5_DOC2VEC_correct = get_correct_answer(top_5_DOC2VEC_POS)
-        d.update({"top_5_DOC2VEC": top_5_DOC2VEC_POS})
+        d.update({"top_5_DOC2VEC_POS": top_5_DOC2VEC_POS})
         d.update({"top_5_DOC2VEC_prec": top_5_DOC2VEC_prec})
         d.update({"top_5_DOC2VEC_correct": top_5_DOC2VEC_correct})
 
@@ -185,14 +203,36 @@ def extract_search_engines_data(query_data):
 def measure_precision_and_recall(ground_truth, data, query_data):
     query_data = update_query_data(query_data, data)
     search_engines_data = extract_search_engines_data(query_data)
-    print(json.dumps(search_engines_data, indent=1))
+    #print(json.dumps(search_engines_data, indent=1))
+
+
+def plot_tsne(embedding_vectors):
+    tsne = TSNE(n_components=2, verbose=1, perplexity=2, n_iter=3000)
+    tsne_results = tsne.fit_transform(embedding_vectors)
+
+    # scatterplot
+    # df = pd.DataFrame(columns=['tsne-2d-one', 'tsne-2d-two', 'vec'])
+    # df['tsne-2d-one'] = tsne_results[:, 0]
+    # df['tsne-2d-two'] = tsne_results[:, 1]
+    # df['vec'] = ['man', 'queen', 'king', 'woman', 'algebra']
+    # plt.figure(figsize=(4, 4))
+    # ax = sns.scatterplot(
+    #     x="tsne-2d-one", y="tsne-2d-two",
+    #     hue="vec",
+    #     palette=sns.color_palette("husl", n_colors=5),
+    #     data=df,
+    #     legend="full",
+    #     alpha=1.0
+    # )
 
 
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     data = search_data.extract_data()
     query_data = query_search_engine(ground_truth_dict_list)
-    measure_precision_and_recall(ground_truth_dict_list, data, query_data)
+    #measure_precision_and_recall(ground_truth_dict_list, data, query_data)
+    get_embedding_vectors_lsi(query_data)
+
 
 
 if __name__ == "__main__":
