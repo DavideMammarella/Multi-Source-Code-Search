@@ -1,4 +1,10 @@
-from gensim.corpora import MmCorpus
+from gensim import similarities
+from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.parsing.preprocessing import remove_stopwords
+from gensim.parsing.preprocessing import STOPWORDS
+from gensim.models import TfidfModel, LsiModel
+from gensim.corpora import Dictionary, MmCorpus
 import importlib
 import seaborn as sns
 import pandas as pd
@@ -9,18 +15,38 @@ from sklearn.manifold import TSNE
 search_data = importlib.import_module("search-data")
 
 def get_embedding_vectors_lsi(query_data):
-    embeddings_vectors = []
+    top_5_lsi_data = [d["top_5_LSI"] for d in query_data]
+
+    corpus_bow = MmCorpus("utils/corpus")
     corpus_lsi = MmCorpus("utils/corpus_lsi")
-    lsi_data = [d["top_5_LSI"] for d in query_data]
+    tfidf = TfidfModel.load("utils/tf_idf/model")
+    lsi = LsiModel.load("utils/lsi/model")
+
+    corpus_tf_idf = tfidf[corpus_bow]
+    corpus_lsi = lsi[corpus_tf_idf]
+
+    vec_lsi = lsi[corpus_bow]
+    index = MatrixSimilarity(corpus_lsi)
+    sims = index[vec_lsi]
+    sims = abs(sims)
+    #sims = sorted(range(len(sims)), key=lambda x: x[1], reverse=True)
+
+    embeddings_vectors = [vec_lsi]
+
     temp = []
+    for i, s in sims[:5]:
+        temp.append(corpus_lsi[i])
+        print(corpus_lsi[i])
 
-    for top_5 in lsi_data:
-        for index in top_5:
-            temp.append(corpus_lsi[index].pop())
-        embeddings_vectors.append(temp)
+    embeddings_vectors = embeddings_vectors + temp
+    # temp = []
+    #
+    # for top_5 in lsi_data:
+    #     for index in top_5:
+    #         temp.append(corpus_lsi[index].pop())
+    #     embeddings_vectors.append(temp)
 
-    print(embeddings_vectors)
-    plot_tsne(embeddings_vectors)
+    #plot_tsne(embeddings_vectors)
 
 def query_search_engine(ground_truth):
     """
