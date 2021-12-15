@@ -1,4 +1,7 @@
+import os
+
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from gensim.parsing.preprocessing import remove_stopwords
 from gensim.parsing.preprocessing import STOPWORDS
 from gensim.models import TfidfModel, LsiModel
@@ -30,16 +33,7 @@ def read_corpus(corpus):
         yield gensim.models.doc2vec.TaggedDocument(line, [i])
 
 
-def doc2vec_train(corpus, query):
-    """
-    Represent entities using the doc2vec vectors with k = 300.
-    :param corpus:
-    """
-    train_corpus = list(read_corpus(corpus))
-    model = gensim.models.doc2vec.Doc2Vec(vector_size=300, min_count=2, epochs=40)
-    model.build_vocab(train_corpus)
-    model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
-
+def doc2vec_query(model, query):
     vector = model.infer_vector(query.lower().split())
     sims = model.dv.most_similar([vector], topn=5)
 
@@ -47,6 +41,15 @@ def doc2vec_train(corpus, query):
     for label, index in [("FIRST", 0), ("SECOND", 1), ("THIRD", 2), ("FOURTH", 3), ("FIFTH", 4)]:
         list_top_5_index.append(sims[index][0])
     return list_top_5_index
+
+
+def doc2vec_train(corpus):
+    train_corpus = list(read_corpus(corpus))
+    model = Doc2Vec(vector_size=300, min_count=2, epochs=40)
+    model.build_vocab(train_corpus)
+    model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
+
+    model.save("models/doc2vec")
 
 
 def lsi_train(corpus, query):
@@ -242,13 +245,16 @@ def main():
     # print(corpus[:2])
     # print(corpus[-2:])
     query = "Optimizer that implements the Adadelta algorithm"
-    freq_top_5 = frequency_train(corpus, query)
-    print_top_5_entities(data, freq_top_5, "FREQ")
-    tf_idf_top_5 = tf_idf_train(corpus, query)
-    print_top_5_entities(data, tf_idf_top_5, "TF IDF")
-    lsi_top_5 = lsi_train(corpus, query)
-    print_top_5_entities(data, lsi_top_5, "LSI")
-    doc2vec_top_5 = doc2vec_train(corpus, query)
+    # freq_top_5 = frequency_train(corpus, query)
+    # print_top_5_entities(data, freq_top_5, "FREQ")
+    # tf_idf_top_5 = tf_idf_train(corpus, query)
+    # print_top_5_entities(data, tf_idf_top_5, "TF IDF")
+    # lsi_top_5 = lsi_train(corpus, query)
+    # print_top_5_entities(data, lsi_top_5, "LSI")
+    if not os.path.exists("models/doc2vec"):
+        doc2vec_train(corpus)
+    model = Doc2Vec.load("models/doc2vec")
+    doc2vec_top_5 = doc2vec_query(model, query)
     print_top_5_entities(data, doc2vec_top_5, "DOC2VEC")
 
 
