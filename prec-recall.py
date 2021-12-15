@@ -4,24 +4,24 @@ import importlib
 search_data = importlib.import_module("search-data")
 
 
-def query_search_engine(ground_truth, data):
+def query_search_engine(ground_truth):
     """
     Querying search engines given a dictionary of queries.
     Results are in a dictionary (every dictionary involve one single query with every result)
     """
     queries_list = [[d["query"], d["function/class name"], d["file"]] for d in ground_truth]
-    corpus = search_data.create_corpus(data)
     top_5 = []
     for query, name, file in queries_list:
         top_5.append({
             "ground_truth_query": query,
             "ground_truth_file_name": name,
             "ground_truth_file": file,
-            "top_5_FREQ": search_data.frequency_train(corpus, query)
-            , "top_5_TF_IDF": search_data.tf_idf_train(corpus, query)
-            , "top_5_LSI": search_data.lsi_train(corpus, query)
-            # ,"top_5_DOC2VEC": search_data.doc2vec_train(corpus, query)
+            "top_5_FREQ": search_data.frequency_query(query)
+            , "top_5_TF_IDF": search_data.tf_idf_query(query)
+            , "top_5_LSI": search_data.lsi_query(query)
+            , "top_5_DOC2VEC": search_data.doc2vec_query(query)
         })
+    #print(json.dumps(top_5, indent=1))
     return top_5
 
 
@@ -117,14 +117,14 @@ def update_query_data(query_data, data):
         d.update({"top_5_LSI_prec": top_5_LSI_prec})
         d.update({"top_5_LSI_correct": top_5_LSI_correct})
 
-        # top_5_DOC2VEC_POS = get_POS_list(expected_line, d["top_5_DOC2VEC"])
-        # top_5_DOC2VEC_prec = get_precision(top_5_DOC2VEC_POS)
-        # top_5_DOC2VEC_correct = get_correct_answer(top_5_DOC2VEC_POS)
-        # d.update({"top_5_DOC2VEC": top_5_DOC2VEC_POS})
-        # d.update({"top_5_DOC2VEC_prec": top_5_DOC2VEC_prec})
-        # d.update({"top_5_DOC2VEC_correct": top_5_DOC2VEC_correct})
+        top_5_DOC2VEC_POS = get_POS_list(expected_line, d["top_5_DOC2VEC"])
+        top_5_DOC2VEC_prec = get_precision(top_5_DOC2VEC_POS)
+        top_5_DOC2VEC_correct = get_correct_answer(top_5_DOC2VEC_POS)
+        d.update({"top_5_DOC2VEC": top_5_DOC2VEC_POS})
+        d.update({"top_5_DOC2VEC_prec": top_5_DOC2VEC_prec})
+        d.update({"top_5_DOC2VEC_correct": top_5_DOC2VEC_correct})
 
-    # print(json.dumps(query_data, indent=1))
+    #print(json.dumps(query_data, indent=1))
     return query_data
 
 
@@ -169,13 +169,13 @@ def extract_search_engines_data(query_data):
         "recall": recall
     })
 
-    # doc2vec_data = [[d["top_5_DOC2VEC_prec"], d["top_5_DOC2VEC_correct"]] for d in query_data]
-    # avg_precision, recall = calculate_avg_precision_recall(doc2vec_data)
-    # search_engines_data.append({
-    #     "search_engine": "DOC2VEC",
-    #     "avg_precision": avg_precision,
-    #     "recall": recall
-    # })
+    doc2vec_data = [[d["top_5_DOC2VEC_prec"], d["top_5_DOC2VEC_correct"]] for d in query_data]
+    avg_precision, recall = calculate_avg_precision_recall(doc2vec_data)
+    search_engines_data.append({
+        "search_engine": "DOC2VEC",
+        "avg_precision": avg_precision,
+        "recall": recall
+    })
 
     return search_engines_data
 
@@ -189,7 +189,7 @@ def measure_precision_and_recall(ground_truth, data, query_data):
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     data = search_data.extract_data()
-    query_data = query_search_engine(ground_truth_dict_list, data)
+    query_data = query_search_engine(ground_truth_dict_list)
     measure_precision_and_recall(ground_truth_dict_list, data, query_data)
 
 
