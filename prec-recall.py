@@ -130,16 +130,18 @@ def update_query_data(query_data, data):
 
 def calculate_avg_precision_recall(search_engine_data):
     total_precision = 0
-    recall = 0
+    total_recall = 0
     for prec, correct in search_engine_data:
         total_precision = total_precision + int(prec)
-        recall = recall + correct
+        total_recall = total_recall + correct
     try:
         avg_precision = total_precision / len(search_engine_data)
+        avg_recall = total_recall / len(search_engine_data)
     except:
         avg_precision = 0
+        avg_recall = 0
 
-    return avg_precision, recall
+    return avg_precision, avg_recall
 
 
 def extract_search_engines_data(query_data):
