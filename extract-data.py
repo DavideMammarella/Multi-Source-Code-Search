@@ -23,8 +23,8 @@ def write_csv():
             writer.writerow(data)
 
     print("Classes: ", len([d for d in extracted_data if d.get("type") == "class"]),
-          "\nMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
           "\nFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
+          "\nMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
           "\nTotal entities:", len(extracted_data))
 
 
@@ -111,14 +111,16 @@ def get_and_visit_files(directory, file_extension):
     :param file_extension: extension of file to extract in "*.extension" format
     """
     global file_path_and_name
+    files_count = 0
     for path, _, files in os.walk(directory):
         for file in files:
             if fnmatch(file, file_extension):
                 file_path_and_name = os.path.join(path, file)
                 with open(file_path_and_name, 'r') as py_file:
+                    files_count = files_count + 1
                     ast_of_py_file = ast.parse(py_file.read())
                     AstVisitor().visit(ast_of_py_file)
-
+    print("Python files: ", files_count)
 
 def main():
     root_directory = "tensorflow"
