@@ -106,6 +106,7 @@ def get_embedding_vectors_lsi(query_data):
 def calculate_avg_precision_recall(search_engine_data):
     total_precision = 0
     total_recall = 0
+
     for prec, correct in search_engine_data:
         total_precision = total_precision + int(prec)
         total_recall = total_recall + correct
@@ -117,6 +118,26 @@ def calculate_avg_precision_recall(search_engine_data):
         avg_recall = 0
 
     return avg_precision, avg_recall
+
+
+def get_precision(top_5_POS):
+    return 1 / sum(top_5_POS) if sum(top_5_POS) else 0
+
+
+def get_POS_list(expected_line, top_5, data):
+    expected_line = int(expected_line)
+
+    top_5_index = []
+    for elem in top_5:
+        top_5_index.append(data[elem]["csv_line"])
+
+    pos_list = []
+    for index, item in enumerate(top_5_index, start=1):
+        if item == expected_line:
+            pos_list.append(index)
+        else:
+            pos_list.append(0)
+    return pos_list
 
 
 def extract_search_engines_data(query_data, search_engines):
@@ -135,7 +156,7 @@ def extract_search_engines_data(query_data, search_engines):
     return search_engines_data
 
 
-def get_correct_answers(top_5_POS):
+def get_correct_answer(top_5_POS):
     count = 0
 
     for answer in top_5_POS:
@@ -144,43 +165,31 @@ def get_correct_answers(top_5_POS):
 
     return count
 
-def get_precision(top_5_POS):
-    return 1/sum(top_5_POS) if sum(top_5_POS) else 0
 
-def get_POS_list(expected_line, top_5_index):
-    expected_line = int(expected_line)
-    pos_list = []
-    for pos, top_5_line in enumerate(top_5_index, start=1):
-        if top_5_line == expected_line:
-            pos_list.append(pos)
-        else:
-            pos_list.append(0)
-    return pos_list
-
-def get_position_from_data(expected_name, expected_file):
+def get_position_from_data(expected_name, expected_file, data):
     """
     Return csv line from data.csv file given python class/method name and file.
     """
-    data = search_data.extract_data()
     for d in data:
         values = list(d.values())
         if all(x in values for x in [expected_name, expected_file]):
             return int(d["csv_line"])
 
+
 def measure_precision_and_recall(query_data, search_engines):
+    data = search_data.extract_data()
+
     for d in query_data:  # for all dictionary
         expected_name = d["ground_truth_file_name"]
         expected_file = d["ground_truth_file"]
-        expected_line = get_position_from_data(expected_name, expected_file)
-        print(expected_line, expected_name, expected_file)
-        # expected match with the CSV file line
+        expected_line = get_position_from_data(expected_name, expected_file, data)
+        # print(expected_line, expected_name, expected_file)
 
         for search_engine in search_engines:
-            print(d["top_5_" + search_engine])
-            top_5_POS = get_POS_list(expected_line, d["top_5_" + search_engine])
-            print(top_5_POS)
+            # qui puoi girare data ed estrarre giusto
+            top_5_POS = get_POS_list(expected_line, d["top_5_" + search_engine], data)
             top_5_prec = get_precision(top_5_POS)
-            top_5_correct = get_correct_answers(top_5_POS)
+            top_5_correct = get_correct_answer(top_5_POS)
             d.update({"top_5_" + search_engine + "_POS": top_5_POS})
             d.update({"top_5_" + search_engine + "_prec": top_5_prec})
             d.update({"top_5_" + search_engine + "_correct": top_5_correct})
@@ -194,7 +203,7 @@ def measure_precision_and_recall(query_data, search_engines):
 # QUERY SEARCH ENGINE
 # ----------------------------------------------------------------------------------------------------------------------
 
-def query_search_engine(ground_truth, search_engines):
+def query_search_engine(ground_truth):
     """
     Querying search engines given a dictionary of queries.
     Results are in a dictionary (every dictionary involve one single query with every result)
@@ -202,13 +211,15 @@ def query_search_engine(ground_truth, search_engines):
     queries_list = [[d["query"], d["function/class name"], d["file"]] for d in ground_truth]
     top_5 = []
     for query, name, file in queries_list:
-        temp = {"ground_truth_query": query
+        top_5.append({
+            "ground_truth_query": query
             , "ground_truth_file_name": name
-            , "ground_truth_file": file}
-        for search_engine in search_engines:
-            search_engine_query = getattr(search_data, search_engine.lower() + "_query")(query)
-            temp.update({"top_5_" + search_engine + "": search_engine_query})
-        top_5.append(temp)
+            , "ground_truth_file": file
+            , "top_5_FREQ": search_data.freq_query(query)
+            , "top_5_TF_IDF": search_data.tf_idf_query(query)
+            , "top_5_LSI": search_data.lsi_query(query)
+            , "top_5_DOC2VEC": search_data.doc2vec_query(query)
+        })
     # print(json.dumps(top_5, indent=1))
     return top_5
 
@@ -237,11 +248,11 @@ def ground_truth_txt_to_dict():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    # search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
-    search_engines = ["FREQ"]
-
     ground_truth_dict_list = ground_truth_txt_to_dict()
-    query_data = query_search_engine(ground_truth_dict_list, search_engines)
+    query_data = query_search_engine(ground_truth_dict_list)
+
+    search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
+
     measure_precision_and_recall(query_data, search_engines)
     # lsi_embeddings = get_embedding_vectors_lsi(query_data)
     # doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
