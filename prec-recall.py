@@ -135,37 +135,7 @@ def extract_search_engines_data(query_data, search_engines):
     return search_engines_data
 
 
-def get_position_from_data(expected_name, expected_file, data):
-    """
-    Return csv line from data.csv file given python class/method name and file.
-    """
-    for d in data:
-        values = list(d.values())
-        if all(x in values for x in [expected_name, expected_file]):
-            return int(d["csv_line"])
-
-
-def get_POS_list(expected_line, top_5_index):
-    expected_line = int(expected_line)
-    pos_list = []
-    for index, item in enumerate(top_5_index, start=1):
-        if item == expected_line:
-            pos_list.append(index)
-        else:
-            pos_list.append(0)
-    return pos_list
-
-
-def get_precision(top_5_POS):
-    try:
-        result = 1 / sum(top_5_POS)
-    except:
-        result = 0
-
-    return result
-
-
-def get_correct_answer(top_5_POS):
+def get_correct_answers(top_5_POS):
     count = 0
 
     for answer in top_5_POS:
@@ -174,19 +144,43 @@ def get_correct_answer(top_5_POS):
 
     return count
 
+def get_precision(top_5_POS):
+    return 1/sum(top_5_POS) if sum(top_5_POS) else 0
+
+def get_POS_list(expected_line, top_5_index):
+    expected_line = int(expected_line)
+    pos_list = []
+    for pos, top_5_line in enumerate(top_5_index, start=1):
+        if top_5_line == expected_line:
+            pos_list.append(pos)
+        else:
+            pos_list.append(0)
+    return pos_list
+
+def get_position_from_data(expected_name, expected_file):
+    """
+    Return csv line from data.csv file given python class/method name and file.
+    """
+    data = search_data.extract_data()
+    for d in data:
+        values = list(d.values())
+        if all(x in values for x in [expected_name, expected_file]):
+            return int(d["csv_line"])
 
 def measure_precision_and_recall(query_data, search_engines):
-    data = search_data.extract_data()
     for d in query_data:  # for all dictionary
         expected_name = d["ground_truth_file_name"]
         expected_file = d["ground_truth_file"]
-        expected_line = get_position_from_data(expected_name, expected_file, data)
-        # print(expected_line, expected_name, expected_file)
+        expected_line = get_position_from_data(expected_name, expected_file)
+        print(expected_line, expected_name, expected_file)
+        # expected match with the CSV file line
 
         for search_engine in search_engines:
+            print(d["top_5_" + search_engine])
             top_5_POS = get_POS_list(expected_line, d["top_5_" + search_engine])
+            print(top_5_POS)
             top_5_prec = get_precision(top_5_POS)
-            top_5_correct = get_correct_answer(top_5_POS)
+            top_5_correct = get_correct_answers(top_5_POS)
             d.update({"top_5_" + search_engine + "_POS": top_5_POS})
             d.update({"top_5_" + search_engine + "_prec": top_5_prec})
             d.update({"top_5_" + search_engine + "_correct": top_5_correct})

@@ -243,7 +243,7 @@ def create_corpus(data):
     data_name_comment_standardized = []
     for index, row in enumerate(data):
         data_name_comment_standardized.append({
-            "csv_line": str(index),
+            "csv_line": row["csv_line"],
             "name": method_name_standardization(row["name"]),
             "comment": comment_standardization(row["comment"])
         })
@@ -265,7 +265,7 @@ def extract_data():
         extracted_data = csv.DictReader(csv_file, delimiter=",")  # ordered (Py>3.6)
         for index, row in enumerate(extracted_data):
             data_raw.append({
-                "csv_line": str(index),
+                "csv_line": index+2,
                 "name": row["name"],
                 "file": row["file"],
                 "line": row["line"],
