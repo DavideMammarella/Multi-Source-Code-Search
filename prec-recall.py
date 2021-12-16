@@ -1,5 +1,5 @@
 from gensim import similarities
-from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
+from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity, Similarity
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from gensim.parsing.preprocessing import remove_stopwords
 from gensim.parsing.preprocessing import STOPWORDS
@@ -20,38 +20,33 @@ search_data = importlib.import_module("search-data")
 # ----------------------------------------------------------------------------------------------------------------------
 
 def get_embedding_vectors_lsi(query_data):
-    top_5_lsi_data = [d["top_5_LSI"] for d in query_data]
+    queries = [d["ground_truth_query"] for d in query_data]
+    #top_5_lsi_data = [d["top_5_LSI"] for d in query_data]
 
-    # corpus_bow = MmCorpus("utils/corpus")
-    # corpus_lsi = MmCorpus("utils/corpus_lsi")
-    # tfidf = TfidfModel.load("utils/tf_idf/model")
-    # lsi = LsiModel.load("utils/lsi/model")
-    #
-    # corpus_tf_idf = tfidf[corpus_bow]
-    # corpus_lsi = lsi[corpus_tf_idf]
-    #
-    # vec_lsi = lsi[corpus_bow]
-    # index = MatrixSimilarity(corpus_lsi)
-    # sims = index[vec_lsi]
-    # sims = abs(sims)
-    # sims = sorted(range(len(sims)), key=lambda x: x[1], reverse=True)
-    #
-    # embeddings_vectors = [vec_lsi]
-    #
-    # temp = []
-    # for i, s in sims[:5]:
-    #     temp.append(corpus_lsi[i])
-    #     print(corpus_lsi[i])
-    #
-    # embeddings_vectors = embeddings_vectors + temp
-    # temp = []
-    #
-    # for top_5 in lsi_data:
-    #     for index in top_5:
-    #         temp.append(corpus_lsi[index].pop())
-    #     embeddings_vectors.append(temp)
-    #
-    # plot_tsne(embeddings_vectors)
+    lsi = LsiModel.load("utils/lsi/model")
+    corpus_lsi = MmCorpus("utils/lsi/corpus_lsi")
+
+    embeddings_lsi = []
+
+    for query in queries:
+        query_bow = search_data.process_query(query)
+        top_5, lsi_index = search_data.lsi_query(query)
+        vector = lsi[query_bow]
+        sims = abs(lsi_index[vector])
+        embeddings = [lsi[query_bow]]
+
+        sims_sorted = sorted(enumerate(sims), key=lambda x: x[1], reverse=True)
+
+        for index, value in sims_sorted[:5]:
+            embeddings.append(corpus_lsi[index])
+
+        for vector in embeddings:
+            temp = []
+            for _, value in vector:
+                temp.append(value)
+            embeddings_lsi.append(temp)
+
+    return embeddings
 
 
 def plot_tsne(embedding_vectors):
@@ -241,7 +236,7 @@ def query_search_engine(ground_truth):
             , "ground_truth_file": file
             # ,"top_5_FREQ": search_data.frequency_query(query)
             # , "top_5_TF_IDF": search_data.tf_idf_query(query)
-            , "top_5_LSI": search_data.lsi_query(query)
+            #, "top_5_LSI": search_data.lsi_query(query)
             # , "top_5_DOC2VEC": search_data.doc2vec_query(query)
         })
     # print(json.dumps(top_5, indent=1))
@@ -275,7 +270,7 @@ def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list)
     # measure_precision_and_recall(query_data)
-    get_embedding_vectors_lsi(query_data)
+    lsi_embeddings = get_embedding_vectors_lsi(query_data)
 
 
 if __name__ == "__main__":
