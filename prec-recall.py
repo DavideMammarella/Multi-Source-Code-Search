@@ -14,6 +14,11 @@ from sklearn.manifold import TSNE
 
 search_data = importlib.import_module("search-data")
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# EMBEDDINGs AND PLOT
+# ----------------------------------------------------------------------------------------------------------------------
+
 def get_embedding_vectors_lsi(query_data):
     top_5_lsi_data = [d["top_5_LSI"] for d in query_data]
 
@@ -49,7 +54,82 @@ def get_embedding_vectors_lsi(query_data):
     # plot_tsne(embeddings_vectors)
 
 
+def plot_tsne(embedding_vectors):
+    tsne = TSNE(n_components=2, verbose=1, perplexity=2, n_iter=3000)
+    tsne_results = tsne.fit_transform(embedding_vectors)
 
+    # scatterplot
+    # df = pd.DataFrame(columns=['tsne-2d-one', 'tsne-2d-two', 'vec'])
+    # df['tsne-2d-one'] = tsne_results[:, 0]
+    # df['tsne-2d-two'] = tsne_results[:, 1]
+    # df['vec'] = ['man', 'queen', 'king', 'woman', 'algebra']
+    # plt.figure(figsize=(4, 4))
+    # ax = sns.scatterplot(
+    #     x="tsne-2d-one", y="tsne-2d-two",
+    #     hue="vec",
+    #     palette=sns.color_palette("husl", n_colors=5),
+    #     data=df,
+    #     legend="full",
+    #     alpha=1.0
+    # )
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# PRECISION - RECALL
+# ----------------------------------------------------------------------------------------------------------------------
+
+def calculate_avg_precision_recall(search_engine_data):
+    total_precision = 0
+    total_recall = 0
+    for prec, correct in search_engine_data:
+        total_precision = total_precision + int(prec)
+        total_recall = total_recall + correct
+    try:
+        avg_precision = total_precision / len(search_engine_data)
+        avg_recall = total_recall / len(search_engine_data)
+    except:
+        avg_precision = 0
+        avg_recall = 0
+
+    return avg_precision, avg_recall
+
+
+def extract_search_engines_data(query_data):
+    search_engines_data = []
+
+    freq_data = [[d["top_5_FREQ_prec"], d["top_5_FREQ_correct"]] for d in query_data]
+    avg_precision, recall = calculate_avg_precision_recall(freq_data)
+    search_engines_data.append({
+        "search_engine": "FREQ",
+        "avg_precision": avg_precision,
+        "recall": recall
+    })
+
+    tf_idf_data = [[d["top_5_TF_IDF_prec"], d["top_5_TF_IDF_correct"]] for d in query_data]
+    avg_precision, recall = calculate_avg_precision_recall(tf_idf_data)
+    search_engines_data.append({
+        "search_engine": "TF_IDF",
+        "avg_precision": avg_precision,
+        "recall": recall
+    })
+
+    lsi_data = [[d["top_5_LSI_prec"], d["top_5_LSI_correct"]] for d in query_data]
+    avg_precision, recall = calculate_avg_precision_recall(lsi_data)
+    search_engines_data.append({
+        "search_engine": "LSI",
+        "avg_precision": avg_precision,
+        "recall": recall
+    })
+
+    doc2vec_data = [[d["top_5_DOC2VEC_prec"], d["top_5_DOC2VEC_correct"]] for d in query_data]
+    avg_precision, recall = calculate_avg_precision_recall(doc2vec_data)
+    search_engines_data.append({
+        "search_engine": "DOC2VEC",
+        "avg_precision": avg_precision,
+        "recall": recall
+    })
+
+    return search_engines_data
 
 
 def get_position_from_data(expected_name, expected_file, data):
@@ -132,91 +212,20 @@ def update_query_data(query_data, data):
         d.update({"top_5_DOC2VEC_prec": top_5_DOC2VEC_prec})
         d.update({"top_5_DOC2VEC_correct": top_5_DOC2VEC_correct})
 
-    #print(json.dumps(query_data, indent=1))
+    # print(json.dumps(query_data, indent=1))
     return query_data
 
 
-def calculate_avg_precision_recall(search_engine_data):
-    total_precision = 0
-    total_recall = 0
-    for prec, correct in search_engine_data:
-        total_precision = total_precision + int(prec)
-        total_recall = total_recall + correct
-    try:
-        avg_precision = total_precision / len(search_engine_data)
-        avg_recall = total_recall / len(search_engine_data)
-    except:
-        avg_precision = 0
-        avg_recall = 0
-
-    return avg_precision, avg_recall
-
-
-def extract_search_engines_data(query_data):
-    search_engines_data = []
-
-    freq_data = [[d["top_5_FREQ_prec"], d["top_5_FREQ_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(freq_data)
-    search_engines_data.append({
-        "search_engine": "FREQ",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    tf_idf_data = [[d["top_5_TF_IDF_prec"], d["top_5_TF_IDF_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(tf_idf_data)
-    search_engines_data.append({
-        "search_engine": "TF_IDF",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    lsi_data = [[d["top_5_LSI_prec"], d["top_5_LSI_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(lsi_data)
-    search_engines_data.append({
-        "search_engine": "LSI",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    doc2vec_data = [[d["top_5_DOC2VEC_prec"], d["top_5_DOC2VEC_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(doc2vec_data)
-    search_engines_data.append({
-        "search_engine": "DOC2VEC",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    return search_engines_data
-
-
-
-
-
-def plot_tsne(embedding_vectors):
-    tsne = TSNE(n_components=2, verbose=1, perplexity=2, n_iter=3000)
-    tsne_results = tsne.fit_transform(embedding_vectors)
-
-    # scatterplot
-    # df = pd.DataFrame(columns=['tsne-2d-one', 'tsne-2d-two', 'vec'])
-    # df['tsne-2d-one'] = tsne_results[:, 0]
-    # df['tsne-2d-two'] = tsne_results[:, 1]
-    # df['vec'] = ['man', 'queen', 'king', 'woman', 'algebra']
-    # plt.figure(figsize=(4, 4))
-    # ax = sns.scatterplot(
-    #     x="tsne-2d-one", y="tsne-2d-two",
-    #     hue="vec",
-    #     palette=sns.color_palette("husl", n_colors=5),
-    #     data=df,
-    #     legend="full",
-    #     alpha=1.0
-    # )
-
-def measure_precision_and_recall(data, query_data):
+def measure_precision_and_recall(query_data):
+    data = search_data.extract_data()
     query_data = update_query_data(query_data, data)
     search_engines_data = extract_search_engines_data(query_data)
-    #print(json.dumps(search_engines_data, indent=1))
+    # print(json.dumps(search_engines_data, indent=1))
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# QUERY SEARCH ENGINE
+# ----------------------------------------------------------------------------------------------------------------------
 
 def query_search_engine(ground_truth):
     """
@@ -228,14 +237,14 @@ def query_search_engine(ground_truth):
     for query, name, file in queries_list:
         top_5.append({
             "ground_truth_query": query
-            ,"ground_truth_file_name": name
-            ,"ground_truth_file": file
+            , "ground_truth_file_name": name
+            , "ground_truth_file": file
             # ,"top_5_FREQ": search_data.frequency_query(query)
             # , "top_5_TF_IDF": search_data.tf_idf_query(query)
             , "top_5_LSI": search_data.lsi_query(query)
-            #, "top_5_DOC2VEC": search_data.doc2vec_query(query)
+            # , "top_5_DOC2VEC": search_data.doc2vec_query(query)
         })
-    #print(json.dumps(top_5, indent=1))
+    # print(json.dumps(top_5, indent=1))
     return top_5
 
 
@@ -257,13 +266,16 @@ def ground_truth_txt_to_dict():
             })
     return ground_truth
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# MAIN
+# ----------------------------------------------------------------------------------------------------------------------
+
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
-    data = search_data.extract_data()
     query_data = query_search_engine(ground_truth_dict_list)
-    #measure_precision_and_recall(data, query_data)
+    # measure_precision_and_recall(query_data)
     get_embedding_vectors_lsi(query_data)
-
 
 
 if __name__ == "__main__":
