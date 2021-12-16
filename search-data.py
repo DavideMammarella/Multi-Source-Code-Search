@@ -27,24 +27,27 @@ def print_top_5_entities(data, top_5_index, search_engine):
               "\n------------------------------------------------------------")
 
 
-def read_corpus(corpus):
-    for i, line in enumerate(corpus):
-        yield gensim.models.doc2vec.TaggedDocument(line, [i])
-
-
 def doc2vec_query(query):
     model = Doc2Vec.load("utils/doc2vec/model")
+
     vector = model.infer_vector(query.lower().split())
     sims = model.dv.most_similar([vector], topn=5)
 
     list_top_5_index = []
     for label, index in [("FIRST", 0), ("SECOND", 1), ("THIRD", 2), ("FOURTH", 3), ("FIFTH", 4)]:
         list_top_5_index.append(sims[index][0])
+
     return list_top_5_index
+
+
+def read_corpus(corpus):
+    for i, line in enumerate(corpus):
+        yield gensim.models.doc2vec.TaggedDocument(line, [i])
 
 
 def doc2vec_train(corpus):
     Path("utils/doc2vec").mkdir(parents=True, exist_ok=True)
+
     train_corpus = list(read_corpus(corpus))
 
     if os.path.exists("utils/doc2vec/model"):
@@ -55,7 +58,12 @@ def doc2vec_train(corpus):
         model.train(train_corpus, total_examples=model.corpus_count, epochs=model.epochs)
         model.save("utils/doc2vec/model")
 
-    return model
+
+def get_top_5_index(similarity):
+    list_top_5_index = []
+    for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
+        list_top_5_index.append(idx)
+    return list_top_5_index[:5]
 
 
 def lsi_query(query):
@@ -64,8 +72,8 @@ def lsi_query(query):
     corpus_lsi = MmCorpus("utils/corpus_lsi")
 
     query_bow = process_query(query)
-
     vec_lsi = lsi[tfidf[query_bow]]
+
     index = MatrixSimilarity(corpus_lsi)
 
     similarity = index[vec_lsi]
@@ -74,11 +82,11 @@ def lsi_query(query):
     return top_5_index
 
 
-def lsi_train(corpus):
+def lsi_train():
     corpus_bow = MmCorpus("utils/corpus")
+    dictionary = Dictionary.load("utils/dictionary")
     Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
     Path("utils/lsi").mkdir(parents=True, exist_ok=True)
-    dictionary = Dictionary.load("utils/dictionary")
 
     if os.path.exists("utils/tf_idf/model"):
         tfidf = TfidfModel.load("utils/tf_idf/model")
@@ -100,14 +108,14 @@ def lsi_train(corpus):
 def tf_idf_query(query):
     query_bow = process_query(query)
 
-    tf_idf_index = SparseMatrixSimilarity.load("utils/tf_idf/index")
+    tf_idf_index = SparseMatrixSimilarity.load("utils/tf_idf/tf_idf.index")
     sims = tf_idf_index[query_bow]
 
     top_5_index = get_top_5_index(sims)
     return top_5_index
 
 
-def tf_idf_train(corpus):
+def tf_idf_train():
     corpus_bow = MmCorpus("utils/corpus")
     dictionary = Dictionary.load("utils/dictionary")
     Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
@@ -119,9 +127,7 @@ def tf_idf_train(corpus):
         tfidf.save("utils/tf_idf/model")
 
     tf_idf_index = SparseMatrixSimilarity(tfidf[corpus_bow], num_features=len(dictionary))
-    tf_idf_index.save("utils/tf_idf/index")
-
-    return tfidf
+    tf_idf_index.save("utils/tf_idf/tf_idf.index")
 
 
 def frequency_query(query):
@@ -129,19 +135,12 @@ def frequency_query(query):
     dictionary = Dictionary.load("utils/dictionary")
 
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
-    query_bow = process_query(query)
 
+    query_bow = process_query(query)
     similarity = frequency_index[query_bow]
 
     top_5_index = get_top_5_index(similarity)
     return top_5_index
-
-
-def get_top_5_index(similarity):
-    list_top_5_index = []
-    for idx, score in sorted(enumerate(similarity), key=lambda x: x[1], reverse=True):
-        list_top_5_index.append(idx)
-    return list_top_5_index[:5]
 
 
 def process_query(query):
@@ -162,8 +161,6 @@ def process_corpus(corpus):
     Path("utils").mkdir(parents=True, exist_ok=True)
     dictionary.save("utils/dictionary")
     MmCorpus.serialize("utils/corpus", corpus_bow)
-
-    return corpus
 
 
 def remove_stopwords(text):
@@ -284,8 +281,8 @@ def main():
     process_corpus(corpus)
     query = "Optimizer that implements the Adadelta algorithm"
 
-    tf_idf_train(corpus)
-    lsi_train(corpus)
+    tf_idf_train()
+    lsi_train()
     doc2vec_train(corpus)
 
     freq_top_5 = frequency_query(query)

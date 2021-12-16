@@ -48,44 +48,8 @@ def get_embedding_vectors_lsi(query_data):
     #
     # plot_tsne(embeddings_vectors)
 
-def query_search_engine(ground_truth):
-    """
-    Querying search engines given a dictionary of queries.
-    Results are in a dictionary (every dictionary involve one single query with every result)
-    """
-    queries_list = [[d["query"], d["function/class name"], d["file"]] for d in ground_truth]
-    top_5 = []
-    for query, name, file in queries_list:
-        top_5.append({
-            "ground_truth_query": query
-            ,"ground_truth_file_name": name
-            ,"ground_truth_file": file
-            # ,"top_5_FREQ": search_data.frequency_query(query)
-            # , "top_5_TF_IDF": search_data.tf_idf_query(query)
-            , "top_5_LSI": search_data.lsi_query(query)
-            #, "top_5_DOC2VEC": search_data.doc2vec_query(query)
-        })
-    #print(json.dumps(top_5, indent=1))
-    return top_5
 
 
-def ground_truth_txt_to_dict():
-    """
-    Parse a "ground truth" txt file in a list of dictionaries.
-    """
-    ground_truth = []  # Blank list
-    with open("ground-truth-unique.txt", "r") as file:
-        sections = file.read().split("\n\n")  # Split it by double linebreaks
-        for section in sections:  # Iterate through sections
-            lines = section.split("\n")  # Split sections by linebreaks
-            if len(lines) < 3:  # Make sure that there is the correct amount of lines
-                return "ERROR!"
-            ground_truth.append({
-                "query": lines[0].lower(),
-                "function/class name": lines[1],
-                "file": lines[2].replace("../", "", 1)
-            })
-    return ground_truth
 
 
 def get_position_from_data(expected_name, expected_file, data):
@@ -226,10 +190,7 @@ def extract_search_engines_data(query_data):
     return search_engines_data
 
 
-def measure_precision_and_recall(ground_truth, data, query_data):
-    query_data = update_query_data(query_data, data)
-    search_engines_data = extract_search_engines_data(query_data)
-    #print(json.dumps(search_engines_data, indent=1))
+
 
 
 def plot_tsne(embedding_vectors):
@@ -251,12 +212,56 @@ def plot_tsne(embedding_vectors):
     #     alpha=1.0
     # )
 
+def measure_precision_and_recall(data, query_data):
+    query_data = update_query_data(query_data, data)
+    search_engines_data = extract_search_engines_data(query_data)
+    #print(json.dumps(search_engines_data, indent=1))
+
+
+def query_search_engine(ground_truth):
+    """
+    Querying search engines given a dictionary of queries.
+    Results are in a dictionary (every dictionary involve one single query with every result)
+    """
+    queries_list = [[d["query"], d["function/class name"], d["file"]] for d in ground_truth]
+    top_5 = []
+    for query, name, file in queries_list:
+        top_5.append({
+            "ground_truth_query": query
+            ,"ground_truth_file_name": name
+            ,"ground_truth_file": file
+            # ,"top_5_FREQ": search_data.frequency_query(query)
+            # , "top_5_TF_IDF": search_data.tf_idf_query(query)
+            , "top_5_LSI": search_data.lsi_query(query)
+            #, "top_5_DOC2VEC": search_data.doc2vec_query(query)
+        })
+    #print(json.dumps(top_5, indent=1))
+    return top_5
+
+
+def ground_truth_txt_to_dict():
+    """
+    Parse a "ground truth" txt file in a list of dictionaries.
+    """
+    ground_truth = []  # Blank list
+    with open("ground-truth-unique.txt", "r") as file:
+        sections = file.read().split("\n\n")  # Split it by double linebreaks
+        for section in sections:  # Iterate through sections
+            lines = section.split("\n")  # Split sections by linebreaks
+            if len(lines) < 3:  # Make sure that there is the correct amount of lines
+                return "ERROR!"
+            ground_truth.append({
+                "query": lines[0].lower(),
+                "function/class name": lines[1],
+                "file": lines[2].replace("../", "", 1)
+            })
+    return ground_truth
 
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     data = search_data.extract_data()
     query_data = query_search_engine(ground_truth_dict_list)
-    #measure_precision_and_recall(ground_truth_dict_list, data, query_data)
+    #measure_precision_and_recall(data, query_data)
     get_embedding_vectors_lsi(query_data)
 
 
