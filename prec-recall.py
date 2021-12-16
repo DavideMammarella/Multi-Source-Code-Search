@@ -19,9 +19,32 @@ search_data = importlib.import_module("search-data")
 # EMBEDDINGs AND PLOT
 # ----------------------------------------------------------------------------------------------------------------------
 
+def get_embedding_vectors_doc2vec(query_data):
+    queries = [d["ground_truth_query"] for d in query_data]
+
+    corpus = MmCorpus("utils/corpus")
+    model = Doc2Vec.load("utils/doc2vec/model")
+
+    embeddings_doc2vec = []
+
+    for query in queries:
+        vector = model.infer_vector(query.lower().split())
+        sims = model.dv.most_similar([vector], topn=5)
+        sims_sorted = [doc for doc in sims]
+        embeddings = [model.infer_vector(query.lower().split())]
+
+        for index, value in sims_sorted:
+            doc_corpus = corpus[index]
+            print(doc_corpus)
+            embeddings.append(model.infer_vector(doc_corpus))
+
+        for vector in embeddings:
+            embeddings_doc2vec.append(vector)
+
+    return embeddings_doc2vec
+
 def get_embedding_vectors_lsi(query_data):
     queries = [d["ground_truth_query"] for d in query_data]
-    #top_5_lsi_data = [d["top_5_LSI"] for d in query_data]
 
     lsi = LsiModel.load("utils/lsi/model")
     corpus_lsi = MmCorpus("utils/lsi/corpus_lsi")
@@ -46,7 +69,7 @@ def get_embedding_vectors_lsi(query_data):
                 temp.append(value)
             embeddings_lsi.append(temp)
 
-    return embeddings
+    return embeddings_lsi
 
 
 def plot_tsne(embedding_vectors):
@@ -270,7 +293,10 @@ def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list)
     # measure_precision_and_recall(query_data)
-    lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    #lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    #print(lsi_embeddings)
+    doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+    print(doc2vec_embeddings)
 
 
 if __name__ == "__main__":
