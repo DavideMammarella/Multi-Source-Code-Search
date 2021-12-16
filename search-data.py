@@ -17,14 +17,15 @@ def print_top_5_entities(data, top_5_index, search_engine):
     Given a query string, for each embedding print the top-5 most similar entities
     (entity name, file name, line of code), based on cosine similarity.
     """
-    print("\n============================================================\n",
-          search_engine, "     ||||   TOP-5 MOST SIMILAR ENTITIES (ASC)\n"
-                         "============================================================")
-    for elem in top_5_index:
-        print("Python class:", data[elem]["name"],
-              "\nFile:", data[elem]["file"],
-              "\nLine:", data[elem]["line"],
-              "\n------------------------------------------------------------")
+    print("\n+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n",
+          search_engine, " top-5 most similar entities \n"
+                         "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+")
+
+    for index, elem in enumerate(top_5_index, start=1):
+        print(index, "\tPython class:\t", data[elem]["name"],
+              "\n\tFile:\t", data[elem]["file"],
+              "\n\tLine:\t", data[elem]["line"],
+              "\n---------------------------------------------------------------------------------")
 
 
 def doc2vec_query(query):
