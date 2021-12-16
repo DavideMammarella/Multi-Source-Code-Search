@@ -130,7 +130,7 @@ def tf_idf_train():
     tf_idf_index.save("utils/tf_idf/tf_idf.index")
 
 
-def frequency_query(query):
+def freq_query(query):
     corpus_bow = MmCorpus("utils/corpus")
     dictionary = Dictionary.load("utils/dictionary")
 
@@ -285,7 +285,7 @@ def main():
     lsi_train()
     doc2vec_train(corpus)
 
-    freq_top_5 = frequency_query(query)
+    freq_top_5 = freq_query(query)
     tf_idf_top_5 = tf_idf_query(query)
     lsi_top_5, _ = lsi_query(query)
     doc2vec_top_5 = doc2vec_query(query)
