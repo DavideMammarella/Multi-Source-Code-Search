@@ -27,7 +27,7 @@ def plot_tsne(embedding_vectors, query_data, plotname):
     hues = []
     queries = [d["ground_truth_file_name"] for d in query_data]
     for query in queries:
-        hues.extend([query]*6)
+        hues.extend([query] * 6)
 
     df = pd.DataFrame()
     df['tsne-2d-one'] = tsne_results[:, 0]
@@ -42,7 +42,7 @@ def plot_tsne(embedding_vectors, query_data, plotname):
         alpha=1.0
     )
 
-    plt.savefig(plotname+".png")
+    plt.savefig(plotname + ".png")
 
 
 def get_embedding_vectors_doc2vec(query_data):
@@ -120,39 +120,19 @@ def calculate_avg_precision_recall(search_engine_data):
 
 
 def extract_search_engines_data(query_data):
+
     search_engines_data = []
+    # search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
+    search_engines = ["DOC2VEC"]
 
-    freq_data = [[d["top_5_FREQ_prec"], d["top_5_FREQ_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(freq_data)
-    search_engines_data.append({
-        "search_engine": "FREQ",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    tf_idf_data = [[d["top_5_TF_IDF_prec"], d["top_5_TF_IDF_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(tf_idf_data)
-    search_engines_data.append({
-        "search_engine": "TF_IDF",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    lsi_data = [[d["top_5_LSI_prec"], d["top_5_LSI_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(lsi_data)
-    search_engines_data.append({
-        "search_engine": "LSI",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
-
-    doc2vec_data = [[d["top_5_DOC2VEC_prec"], d["top_5_DOC2VEC_correct"]] for d in query_data]
-    avg_precision, recall = calculate_avg_precision_recall(doc2vec_data)
-    search_engines_data.append({
-        "search_engine": "DOC2VEC",
-        "avg_precision": avg_precision,
-        "recall": recall
-    })
+    for search_engine in search_engines:
+        engine_data = [[d["top_5_" + search_engine + "_prec"], d["top_5_" + search_engine + "_correct"]] for d in query_data]
+        avg_precision, recall = calculate_avg_precision_recall(engine_data)
+        search_engines_data.append({
+            "search_engine": search_engine,
+            "avg_precision": avg_precision,
+            "recall": recall
+        })
 
     return search_engines_data
 
@@ -188,7 +168,6 @@ def get_precision(top_5_POS):
 
 
 def get_correct_answer(top_5_POS):
-    top_5_POS = list(map(int, top_5_POS))
     count = 0
 
     for answer in top_5_POS:
@@ -206,33 +185,16 @@ def update_query_data(query_data, data):
         expected_line = get_position_from_data(expected_name, expected_file, data)
         # print(expected_line, expected_name, expected_file)
 
-        top_5_FREQ_POS = get_POS_list(expected_line, d["top_5_FREQ"])
-        top_5_FREQ_prec = get_precision(top_5_FREQ_POS)
-        top_5_FREQ_correct = get_correct_answer(top_5_FREQ_POS)
-        d.update({"top_5_FREQ_POS": top_5_FREQ_POS})
-        d.update({"top_5_FREQ_prec": top_5_FREQ_prec})
-        d.update({"top_5_FREQ_correct": top_5_FREQ_correct})
+        #search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
+        search_engines = ["DOC2VEC"]
 
-        top_5_TF_IDF_POS = get_POS_list(expected_line, d["top_5_TF_IDF"])
-        top_5_TF_IDF_prec = get_precision(top_5_TF_IDF_POS)
-        top_5_TF_IDF_correct = get_correct_answer(top_5_TF_IDF_POS)
-        d.update({"top_5_TF_IDF_POS": top_5_TF_IDF_POS})
-        d.update({"top_5_TF_IDF_prec": top_5_TF_IDF_prec})
-        d.update({"top_5_TF_IDF_correct": top_5_TF_IDF_correct})
-
-        top_5_LSI_POS = get_POS_list(expected_line, d["top_5_LSI"])
-        top_5_LSI_prec = get_precision(top_5_LSI_POS)
-        top_5_LSI_correct = get_correct_answer(top_5_LSI_POS)
-        d.update({"top_5_LSI_POS": top_5_LSI_POS})
-        d.update({"top_5_LSI_prec": top_5_LSI_prec})
-        d.update({"top_5_LSI_correct": top_5_LSI_correct})
-
-        top_5_DOC2VEC_POS = get_POS_list(expected_line, d["top_5_DOC2VEC"])
-        top_5_DOC2VEC_prec = get_precision(top_5_DOC2VEC_POS)
-        top_5_DOC2VEC_correct = get_correct_answer(top_5_DOC2VEC_POS)
-        d.update({"top_5_DOC2VEC_POS": top_5_DOC2VEC_POS})
-        d.update({"top_5_DOC2VEC_prec": top_5_DOC2VEC_prec})
-        d.update({"top_5_DOC2VEC_correct": top_5_DOC2VEC_correct})
+        for search_engine in search_engines:
+            top_5_POS = get_POS_list(expected_line, d["top_5_" +search_engine])
+            top_5_prec = get_precision(top_5_POS)
+            top_5_correct = get_correct_answer(top_5_POS)
+            d.update({"top_5_" + search_engine + "_POS": top_5_POS})
+            d.update({"top_5_" + search_engine + "_prec": top_5_prec})
+            d.update({"top_5_" + search_engine + "_correct": top_5_correct})
 
     # print(json.dumps(query_data, indent=1))
     return query_data
@@ -261,9 +223,9 @@ def query_search_engine(ground_truth):
             "ground_truth_query": query
             , "ground_truth_file_name": name
             , "ground_truth_file": file
-            ,"top_5_FREQ": search_data.frequency_query(query)
-            , "top_5_TF_IDF": search_data.tf_idf_query(query)
-            , "top_5_LSI": search_data.lsi_query(query)
+            # , "top_5_FREQ": search_data.frequency_query(query)
+            # , "top_5_TF_IDF": search_data.tf_idf_query(query)
+            # , "top_5_LSI": search_data.lsi_query(query)
             , "top_5_DOC2VEC": search_data.doc2vec_query(query)
         })
     # print(json.dumps(top_5, indent=1))
@@ -297,10 +259,10 @@ def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list)
     measure_precision_and_recall(query_data)
-    lsi_embeddings = get_embedding_vectors_lsi(query_data)
-    doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-    plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
-    plot_tsne(lsi_embeddings, query_data, "lsi")
+    # lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    # doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+    # plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+    # plot_tsne(lsi_embeddings, query_data, "lsi")
 
 
 if __name__ == "__main__":
