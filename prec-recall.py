@@ -10,6 +10,7 @@ import seaborn as sns
 import pandas as pd
 import json
 
+from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 search_data = importlib.import_module("search-data")
@@ -18,6 +19,31 @@ search_data = importlib.import_module("search-data")
 # ----------------------------------------------------------------------------------------------------------------------
 # EMBEDDINGs AND PLOT
 # ----------------------------------------------------------------------------------------------------------------------
+
+def plot_tsne(embedding_vectors, query_data, plotname):
+    tsne = TSNE(n_components=2, verbose=1, perplexity=2, n_iter=3000)
+    tsne_results = tsne.fit_transform(embedding_vectors)
+
+    hues = []
+    queries = [d["ground_truth_file_name"] for d in query_data]
+    for query in queries:
+        hues.extend([query]*6)
+
+    df = pd.DataFrame()
+    df['tsne-2d-one'] = tsne_results[:, 0]
+    df['tsne-2d-two'] = tsne_results[:, 1]
+    plt.figure(figsize=(10, 10))
+    sns.scatterplot(
+        x="tsne-2d-one", y="tsne-2d-two",
+        hue=hues,
+        palette=sns.color_palette("husl", n_colors=10),
+        data=df,
+        legend="full",
+        alpha=1.0
+    )
+
+    plt.savefig(plotname+".png")
+
 
 def get_embedding_vectors_doc2vec(query_data):
     queries = [d["ground_truth_query"] for d in query_data]
@@ -42,6 +68,7 @@ def get_embedding_vectors_doc2vec(query_data):
             embeddings_doc2vec.append(vector)
 
     return embeddings_doc2vec
+
 
 def get_embedding_vectors_lsi(query_data):
     queries = [d["ground_truth_query"] for d in query_data]
@@ -70,26 +97,6 @@ def get_embedding_vectors_lsi(query_data):
             embeddings_lsi.append(temp)
 
     return embeddings_lsi
-
-
-def plot_tsne(embedding_vectors):
-    tsne = TSNE(n_components=2, verbose=1, perplexity=2, n_iter=3000)
-    tsne_results = tsne.fit_transform(embedding_vectors)
-
-    # scatterplot
-    # df = pd.DataFrame(columns=['tsne-2d-one', 'tsne-2d-two', 'vec'])
-    # df['tsne-2d-one'] = tsne_results[:, 0]
-    # df['tsne-2d-two'] = tsne_results[:, 1]
-    # df['vec'] = ['man', 'queen', 'king', 'woman', 'algebra']
-    # plt.figure(figsize=(4, 4))
-    # ax = sns.scatterplot(
-    #     x="tsne-2d-one", y="tsne-2d-two",
-    #     hue="vec",
-    #     palette=sns.color_palette("husl", n_colors=5),
-    #     data=df,
-    #     legend="full",
-    #     alpha=1.0
-    # )
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -162,7 +169,6 @@ def get_position_from_data(expected_name, expected_file, data):
 
 def get_POS_list(expected_line, top_5_index):
     expected_line = int(expected_line)
-    top_5_index = list(map(int, top_5_index))
     pos_list = []
     for index, item in enumerate(top_5_index, start=1):
         if item == expected_line:
@@ -173,8 +179,6 @@ def get_POS_list(expected_line, top_5_index):
 
 
 def get_precision(top_5_POS):
-    top_5_POS = list(map(int, top_5_POS))
-
     try:
         result = 1 / sum(top_5_POS)
     except:
@@ -238,7 +242,7 @@ def measure_precision_and_recall(query_data):
     data = search_data.extract_data()
     query_data = update_query_data(query_data, data)
     search_engines_data = extract_search_engines_data(query_data)
-    # print(json.dumps(search_engines_data, indent=1))
+    print(json.dumps(search_engines_data, indent=1))
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -257,10 +261,10 @@ def query_search_engine(ground_truth):
             "ground_truth_query": query
             , "ground_truth_file_name": name
             , "ground_truth_file": file
-            # ,"top_5_FREQ": search_data.frequency_query(query)
-            # , "top_5_TF_IDF": search_data.tf_idf_query(query)
-            #, "top_5_LSI": search_data.lsi_query(query)
-            # , "top_5_DOC2VEC": search_data.doc2vec_query(query)
+            ,"top_5_FREQ": search_data.frequency_query(query)
+            , "top_5_TF_IDF": search_data.tf_idf_query(query)
+            , "top_5_LSI": search_data.lsi_query(query)
+            , "top_5_DOC2VEC": search_data.doc2vec_query(query)
         })
     # print(json.dumps(top_5, indent=1))
     return top_5
@@ -292,11 +296,11 @@ def ground_truth_txt_to_dict():
 def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list)
-    # measure_precision_and_recall(query_data)
+    measure_precision_and_recall(query_data)
     lsi_embeddings = get_embedding_vectors_lsi(query_data)
-    print(lsi_embeddings)
     doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-    print(doc2vec_embeddings)
+    plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+    plot_tsne(lsi_embeddings, query_data, "lsi")
 
 
 if __name__ == "__main__":
