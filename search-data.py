@@ -69,7 +69,7 @@ def get_top_5_index(similarity):
 def lsi_query(query):
     tfidf = TfidfModel.load("utils/tf_idf/model")
     lsi = LsiModel.load("utils/lsi/model")
-    corpus_lsi = MmCorpus("utils/corpus_lsi")
+    corpus_lsi = MmCorpus("utils/lsi/corpus_lsi")
 
     query_bow = process_query(query)
     vec_lsi = lsi[tfidf[query_bow]]
@@ -102,7 +102,7 @@ def lsi_train():
         lsi.save("utils/lsi/model")
     corpus_lsi = lsi[corpus_tf_idf]
 
-    MmCorpus.serialize("utils/corpus_lsi", corpus_lsi)  # save corpus
+    MmCorpus.serialize("utils/lsi/corpus_lsi", corpus_lsi)  # save corpus
 
 
 def tf_idf_query(query):
