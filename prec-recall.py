@@ -22,7 +22,8 @@ search_data = importlib.import_module("search-data")
 def get_embedding_vectors_doc2vec(query_data):
     queries = [d["ground_truth_query"] for d in query_data]
 
-    corpus = MmCorpus("utils/corpus")
+    data = search_data.extract_data()
+    corpus = search_data.create_corpus(data)
     model = Doc2Vec.load("utils/doc2vec/model")
 
     embeddings_doc2vec = []
@@ -35,7 +36,6 @@ def get_embedding_vectors_doc2vec(query_data):
 
         for index, value in sims_sorted:
             doc_corpus = corpus[index]
-            print(doc_corpus)
             embeddings.append(model.infer_vector(doc_corpus))
 
         for vector in embeddings:
@@ -293,8 +293,8 @@ def main():
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list)
     # measure_precision_and_recall(query_data)
-    #lsi_embeddings = get_embedding_vectors_lsi(query_data)
-    #print(lsi_embeddings)
+    lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    print(lsi_embeddings)
     doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
     print(doc2vec_embeddings)
 
