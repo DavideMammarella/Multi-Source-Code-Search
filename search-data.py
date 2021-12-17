@@ -79,7 +79,7 @@ def lsi_query(query):
     similarity = lsi_index[vec_lsi]
 
     top_5_index = get_top_5_index(similarity)
-    return top_5_index, lsi_index
+    return top_5_index
 
 
 def lsi_train():
@@ -287,7 +287,7 @@ def main():
 
     freq_top_5 = freq_query(query)
     tf_idf_top_5 = tf_idf_query(query)
-    lsi_top_5, _ = lsi_query(query)
+    lsi_top_5 = lsi_query(query)
     doc2vec_top_5 = doc2vec_query(query)
 
     print_top_5_entities(data, freq_top_5, "FREQ")

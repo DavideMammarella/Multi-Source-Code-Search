@@ -1,13 +1,9 @@
-from gensim import similarities
-from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity, Similarity
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from gensim.parsing.preprocessing import remove_stopwords
-from gensim.parsing.preprocessing import STOPWORDS
-from gensim.models import TfidfModel, LsiModel
-from gensim.corpora import Dictionary, MmCorpus
-import importlib
+from gensim.models.doc2vec import Doc2Vec
+from gensim.corpora import MmCorpus
+from gensim.models import LsiModel
 import seaborn as sns
 import pandas as pd
+import importlib
 import json
 
 from matplotlib import pyplot as plt
@@ -103,27 +99,27 @@ def get_embedding_vectors_lsi(query_data):
 # PRECISION - RECALL
 # ----------------------------------------------------------------------------------------------------------------------
 
-def calculate_avg_precision_recall(search_engine_data):
-    total_precision = 0
-    total_recall = 0
+# checked
+def get_avg_precision_recall(query_data, search_engines):
+    search_engines_data = []
 
-    for prec, correct in search_engine_data:
-        total_precision = total_precision + int(prec)
-        total_recall = total_recall + correct
-    try:
-        avg_precision = total_precision / len(search_engine_data)
-        avg_recall = total_recall / len(search_engine_data)
-    except:
-        avg_precision = 0
-        avg_recall = 0
+    for search_engine in search_engines:
+        engine_precision = [d["top_5_" + search_engine + "_prec"] for d in query_data]
+        engine_recall = [d["top_5_" + search_engine + "_correct"] for d in query_data]
 
-    return avg_precision, avg_recall
+        avg_precision = sum(engine_precision) / 10
+        avg_recall = sum(engine_recall) / 10
+
+        search_engines_data.append({
+            "search_engine": search_engine,
+            "avg_precision": avg_precision,
+            "recall": avg_recall
+        })
+
+    return search_engines_data
 
 
-def get_precision(top_5_POS):
-    return 1 / sum(top_5_POS) if sum(top_5_POS) else 0
-
-
+# checked
 def get_POS_list(expected_line, top_5, data):
     expected_line = int(expected_line)
 
@@ -131,71 +127,52 @@ def get_POS_list(expected_line, top_5, data):
     for elem in top_5:
         top_5_index.append(data[elem]["csv_line"])
 
+    # PRINT THIS TO CHECK LINES AND ENTITIES
+    # print("Expected line:\t", expected_line)
+    # print("Top 5 index\t:", top_5_index)
+    # search_data.print_top_5_entities(data, top_5, "FREQ")
+
     pos_list = []
-    for index, item in enumerate(top_5_index, start=1):
-        if item == expected_line:
+    for index, top_5_line in enumerate(top_5_index, start=1):
+        if top_5_line == expected_line:
             pos_list.append(index)
         else:
             pos_list.append(0)
     return pos_list
 
 
-def extract_search_engines_data(query_data, search_engines):
-    search_engines_data = []
-
-    for search_engine in search_engines:
-        engine_data = [[d["top_5_" + search_engine + "_prec"], d["top_5_" + search_engine + "_correct"]] for d in
-                       query_data]
-        avg_precision, recall = calculate_avg_precision_recall(engine_data)
-        search_engines_data.append({
-            "search_engine": search_engine,
-            "avg_precision": avg_precision,
-            "recall": recall
-        })
-
-    return search_engines_data
-
-
-def get_correct_answer(top_5_POS):
-    count = 0
-
-    for answer in top_5_POS:
-        if answer != 0:
-            count = count + 1
-
-    return count
-
-
-def get_position_from_data(expected_name, expected_file, data):
-    """
-    Return csv line from data.csv file given python class/method name and file.
-    """
+# checked
+def get_index_from_data_csv(expected_name, expected_file, data):
     for d in data:
         values = list(d.values())
         if all(x in values for x in [expected_name, expected_file]):
             return int(d["csv_line"])
 
 
+#checked
 def measure_precision_and_recall(query_data, search_engines):
     data = search_data.extract_data()
 
-    for d in query_data:  # for all dictionary
+    for d in query_data:
         expected_name = d["ground_truth_file_name"]
         expected_file = d["ground_truth_file"]
-        expected_line = get_position_from_data(expected_name, expected_file, data)
-        # print(expected_line, expected_name, expected_file)
+        expected_line = get_index_from_data_csv(expected_name, expected_file, data)
+        d.update({"ground_truth_line": expected_line})
 
         for search_engine in search_engines:
-            # qui puoi girare data ed estrarre giusto
-            top_5_POS = get_POS_list(expected_line, d["top_5_" + search_engine], data)
-            top_5_prec = get_precision(top_5_POS)
-            top_5_correct = get_correct_answer(top_5_POS)
-            d.update({"top_5_" + search_engine + "_POS": top_5_POS})
-            d.update({"top_5_" + search_engine + "_prec": top_5_prec})
-            d.update({"top_5_" + search_engine + "_correct": top_5_correct})
+            POS = get_POS_list(expected_line, d["top_5_" + search_engine],
+                               data)  # replace correct answer with it's position
+            precision = 1 / sum(POS) if sum(POS) else 0  # 1/POS if POS not 0
+            correct_answers = 5 - (POS.count(0))  # max num of elements - occurrences of 0
+            d.update({"top_5_" + search_engine + "_POS": POS})
+            d.update({"top_5_" + search_engine + "_prec": precision})
+            d.update({"top_5_" + search_engine + "_correct": correct_answers})
 
+    # PRINT THIS FOR TOP_5 POS/PRECISION/CORRECT ANSWERS
     # print(json.dumps(query_data, indent=1))
-    search_engines_data = extract_search_engines_data(query_data, search_engines)
+
+    search_engines_data = get_avg_precision_recall(query_data, search_engines)
+    # PRINT THIS FOR AVERAGE PRECISION/RECALL ABOVE ALL QUERIES
     print(json.dumps(search_engines_data, indent=1))
 
 
@@ -203,7 +180,7 @@ def measure_precision_and_recall(query_data, search_engines):
 # QUERY SEARCH ENGINE
 # ----------------------------------------------------------------------------------------------------------------------
 
-def query_search_engine(ground_truth):
+def query_search_engine(ground_truth, search_engines):
     """
     Querying search engines given a dictionary of queries.
     Results are in a dictionary (every dictionary involve one single query with every result)
@@ -211,15 +188,13 @@ def query_search_engine(ground_truth):
     queries_list = [[d["query"], d["function/class name"], d["file"]] for d in ground_truth]
     top_5 = []
     for query, name, file in queries_list:
-        top_5.append({
-            "ground_truth_query": query
+        temp = {"ground_truth_query": query
             , "ground_truth_file_name": name
-            , "ground_truth_file": file
-            , "top_5_FREQ": search_data.freq_query(query)
-            , "top_5_TF_IDF": search_data.tf_idf_query(query)
-            , "top_5_LSI": search_data.lsi_query(query)
-            , "top_5_DOC2VEC": search_data.doc2vec_query(query)
-        })
+            , "ground_truth_file": file}
+        for search_engine in search_engines:
+            search_engine_query = getattr(search_data, search_engine.lower() + "_query")(query)
+            temp.update({"top_5_" + search_engine + "": search_engine_query})
+        top_5.append(temp)
     # print(json.dumps(top_5, indent=1))
     return top_5
 
@@ -248,16 +223,15 @@ def ground_truth_txt_to_dict():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    ground_truth_dict_list = ground_truth_txt_to_dict()
-    query_data = query_search_engine(ground_truth_dict_list)
-
     search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
 
+    ground_truth_dict_list = ground_truth_txt_to_dict()
+    query_data = query_search_engine(ground_truth_dict_list, search_engines)
     measure_precision_and_recall(query_data, search_engines)
-    # lsi_embeddings = get_embedding_vectors_lsi(query_data)
-    # doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-    # plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
-    # plot_tsne(lsi_embeddings, query_data, "lsi")
+    lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+    plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+    plot_tsne(lsi_embeddings, query_data, "lsi")
 
 
 if __name__ == "__main__":
