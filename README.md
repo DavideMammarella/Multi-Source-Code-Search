@@ -20,6 +20,8 @@ cd Multi-Source-Code-Search/
 ```
 
 ## Run the application
+In order for the application to work properly, the following commands must be executed in sequence, as each script generates files that are useful for subsequent scripts.
+
 #### Extract data
 Extract all top-level class names, functions and class methods (and comments if available) in *.py files found under the input directory <dir> and any directory under <dir> into a CSV file by running the following command
 ```
