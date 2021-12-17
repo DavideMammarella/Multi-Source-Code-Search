@@ -141,6 +141,7 @@ def freq_query(query):
     similarity = frequency_index[query_bow]
 
     top_5_index = get_top_5_index(similarity)
+
     return top_5_index
 
 
@@ -266,7 +267,7 @@ def extract_data():
         extracted_data = csv.DictReader(csv_file, delimiter=",")  # ordered (Py>3.6)
         for index, row in enumerate(extracted_data):
             data_raw.append({
-                "csv_line": index+2,
+                "csv_line": index,
                 "name": row["name"],
                 "file": row["file"],
                 "line": row["line"],
