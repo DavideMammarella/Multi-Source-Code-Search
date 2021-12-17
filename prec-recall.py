@@ -1,3 +1,4 @@
+from gensim.similarities import MatrixSimilarity
 from gensim.models.doc2vec import Doc2Vec
 from gensim.corpora import MmCorpus
 from gensim.models import LsiModel
@@ -71,12 +72,12 @@ def get_embedding_vectors_lsi(query_data):
 
     lsi = LsiModel.load("utils/lsi/model")
     corpus_lsi = MmCorpus("utils/lsi/corpus_lsi")
+    lsi_index = MatrixSimilarity.load("utils/lsi/lsi.index")
 
     embeddings_lsi = []
 
     for query in queries:
         query_bow = search_data.process_query(query)
-        top_5, lsi_index = search_data.lsi_query(query)
         vector = lsi[query_bow]
         sims = abs(lsi_index[vector])
         embeddings = [lsi[query_bow]]
@@ -107,8 +108,8 @@ def get_avg_precision_recall(query_data, search_engines):
         engine_precision = [d["top_5_" + search_engine + "_prec"] for d in query_data]
         engine_recall = [d["top_5_" + search_engine + "_correct"] for d in query_data]
 
-        avg_precision = sum(engine_precision) / 10
-        avg_recall = sum(engine_recall) / 10
+        avg_precision = sum(engine_precision) / len(engine_precision)
+        avg_recall = sum(engine_recall) / len(engine_recall)
 
         search_engines_data.append({
             "search_engine": search_engine,
@@ -227,7 +228,9 @@ def main():
 
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list, search_engines)
+
     measure_precision_and_recall(query_data, search_engines)
+
     lsi_embeddings = get_embedding_vectors_lsi(query_data)
     doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
     plot_tsne(doc2vec_embeddings, query_data, "doc2vec")

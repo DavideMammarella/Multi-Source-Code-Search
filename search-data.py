@@ -76,6 +76,7 @@ def lsi_query(query):
     vec_lsi = lsi[tfidf[query_bow]]
 
     lsi_index = MatrixSimilarity(corpus_lsi)
+    lsi_index.save("utils/lsi/lsi.index")
     similarity = lsi_index[vec_lsi]
 
     top_5_index = get_top_5_index(similarity)
