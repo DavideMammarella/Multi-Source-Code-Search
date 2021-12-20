@@ -212,12 +212,12 @@ def ground_truth_txt_to_dict():
             if len(lines) < 3:  # Make sure that there is the correct amount of lines
                 return "ERROR!"
 
-            src_path = lines[2].replace("../", "", 1)
-            abs_path = os.path.join(os.path.abspath(os.curdir), src_path)
+            #src_path = lines[2].replace("../", "", 1)
+            #abs_path = os.path.join(os.path.abspath(os.curdir), src_path)
             ground_truth.append({
                 "query": lines[0].lower(),
                 "function/class name": lines[1],
-                "file": abs_path
+                "file": lines[2]
             })
     return ground_truth
 

@@ -115,7 +115,7 @@ def get_and_visit_files(directory, file_extension):
     for path, _, files in os.walk(directory):
         for file in files:
             if fnmatch(file, file_extension):
-                file_path_and_name = os.path.join(os.path.abspath(os.curdir), path, file)
+                file_path_and_name = "../" + os.path.join(path, file)
                 file_path = os.path.join(path, file)
                 with open(file_path, 'r') as py_file:
                     files_count = files_count + 1
