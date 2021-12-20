@@ -6,6 +6,7 @@ import seaborn as sns
 import pandas as pd
 import importlib
 import json
+import os
 
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
@@ -210,10 +211,13 @@ def ground_truth_txt_to_dict():
             lines = section.split("\n")  # Split sections by linebreaks
             if len(lines) < 3:  # Make sure that there is the correct amount of lines
                 return "ERROR!"
+
+            src_path = lines[2].replace("../", "", 1)
+            abs_path = os.path.join(os.path.abspath(os.curdir), src_path)
             ground_truth.append({
                 "query": lines[0].lower(),
                 "function/class name": lines[1],
-                "file": lines[2].replace("../", "", 1)
+                "file": abs_path
             })
     return ground_truth
 
