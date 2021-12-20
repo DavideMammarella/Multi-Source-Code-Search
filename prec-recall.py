@@ -145,9 +145,8 @@ def get_POS_list(expected_line, top_5, data):
 # checked
 def get_index_from_data_csv(expected_name, expected_file, data):
     for d in data:
-        values = list(d.values())
-        if all(x in values for x in [expected_name, expected_file]):
-            return int(d["csv_line"])
+        if d["name"] == expected_name and d["file"] == expected_file:
+            return d["csv_line"]
 
 
 #checked
@@ -224,8 +223,8 @@ def ground_truth_txt_to_dict():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
-    #search_engines = ["FREQ"]
+    #search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
+    search_engines = ["FREQ"]
 
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list, search_engines)
