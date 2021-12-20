@@ -1,7 +1,6 @@
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from gensim.parsing.preprocessing import remove_stopwords
-from gensim.parsing.preprocessing import STOPWORDS
+from gensim.parsing.preprocessing import preprocess_string, remove_stopwords, stem_text
 from gensim.models import TfidfModel, LsiModel
 from gensim.corpora import Dictionary, MmCorpus
 from collections import defaultdict
@@ -41,9 +40,14 @@ def doc2vec_query(query):
     return list_top_5_index
 
 
-def read_corpus(corpus):
+def read_corpus(corpus, tokens_only=False):
     for i, line in enumerate(corpus):
-        yield gensim.models.doc2vec.TaggedDocument(line, [i])
+        line = " ".join(line)
+        tokens = gensim.utils.simple_preprocess(line)
+        if tokens_only:
+            yield tokens
+        else:
+            yield gensim.models.doc2vec.TaggedDocument(tokens, [i])
 
 
 def doc2vec_train(corpus):
@@ -52,7 +56,7 @@ def doc2vec_train(corpus):
     train_corpus = list(read_corpus(corpus))
 
     if os.path.exists("utils/doc2vec/model"):
-        model = Doc2Vec.load("utils/doc2vec/model")
+        pass
     else:
         model = Doc2Vec(vector_size=300, min_count=2, epochs=40)
         model.build_vocab(train_corpus)
@@ -103,7 +107,7 @@ def lsi_train():
         lsi.save("utils/lsi/model")
     corpus_lsi = lsi[corpus_tf_idf]
 
-    MmCorpus.serialize("utils/lsi/corpus_lsi", corpus_lsi)  # save corpus
+    MmCorpus.serialize("utils/lsi/corpus_lsi", corpus_lsi)
 
 
 def tf_idf_query(query):
@@ -165,42 +169,16 @@ def process_corpus(corpus):
     MmCorpus.serialize("utils/corpus", corpus_bow)
 
 
-def remove_stopwords(text):
-    """
-    STOPWORDS are from Gensim.
-    """
-    edited_stopwords = STOPWORDS.union(set(["test", "tests", "main"]))
-    edited_stopwords = edited_stopwords.difference(
-        {"False", "None", "True", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else",
-         "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or",
-         "pass", "raise", "return", "try", "while", "with", "yield", "ArithmeticError", "AssertionError",
-         "AttributeError", "BaseException", "BlockingIOError", "BrokenPipeError", "BufferError", "BytesWarning",
-         "ChildProcessError", "ConnectionAbortedError", "ConnectionError", "ConnectionRefusedError",
-         "ConnectionResetError", "DeprecationWarning", "EOFError", "Ellipsis", "EnvironmentError", "Exception", "False",
-         "FileExistsError", "FileNotFoundError", "FloatingPointError", "FutureWarning", "GeneratorExit", "IOError",
-         "ImportError", "ImportWarning", "IndentationError", "IndexError", "InterruptedError", "IsADirectoryError",
-         "KeyError", "KeyboardInterrupt", "LookupError", "MemoryError", "NameError", "None", "NotADirectoryError",
-         "NotImplemented", "NotImplementedError", "OSError", "OverflowError", "PendingDeprecationWarning",
-         "PermissionError", "ProcessLookupError", "RecursionError", "ReferenceError", "ResourceWarning", "RuntimeError",
-         "RuntimeWarning", "StopAsyncIteration", "StopIteration", "SyntaxError", "SyntaxWarning", "SystemError",
-         "SystemExit", "TabError", "TimeoutError", "True", "TypeError", "UnboundLocalError", "UnicodeDecodeError",
-         "UnicodeEncodeError", "UnicodeError", "UnicodeTranslateError", "UnicodeWarning", "UserWarning", "ValueError",
-         "Warning", "ZeroDivisionError", "_", "build_class", "debug", "doc", "import", "loader", "name", "package",
-         "spec", "abs", "all", "any", "ascii", "bin", "bool", "bytearray", "bytes", "callable", "chr", "classmethod",
-         "compile", "complex", "copyright", "credits", "delattr", "dict", "dir", "divmod", "enumerate", "eval", "exec",
-         "exit", "filter", "float", "format", "frozenset", "getattr", "globals", "hasattr", "hash", "help", "hex", "id",
-         "input", "int", "isinstance", "issubclass", "iter", "len", "license", "list", "locals", "map", "max",
-         "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "quit", "range",
-         "repr", "reversed", "round", "get", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super",
-         "tuple", "type", "vars", "zip", "optimizer", "optimize", "RNN", "optim"})
+def remove_method_stopwords(text):
+    stopwords = {"test", "tests", "main"}
     tokenized_text = text.split()
-    words_filtered = [word for word in tokenized_text if word not in edited_stopwords]
+    words_filtered = [word for word in tokenized_text if word not in stopwords]
 
     word = " ".join(words_filtered)
     return word
 
 
-def name_standardization(data):
+def name_standardization(data, type):
     """
     Standardize a method/comment name:
     1. split entity names (by CamelCase and underscore)
@@ -210,7 +188,8 @@ def name_standardization(data):
     """
     words = data.replace("_", " ")  # split by underscore
     words = re.sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r" \1", words)  # split by CamelCase
-    words = remove_stopwords(words)  # remove stopwords
+    if type == "method":
+        words = remove_method_stopwords(words)
     words = words.lower()  # convert to lowercase
     words = words.split()  # create a list of separated words
 
@@ -225,8 +204,8 @@ def create_corpus(data):
     for index, row in enumerate(data):
         data_name_comment_standardized.append({
             "csv_line": row["csv_line"],
-            "name": name_standardization(row["name"]),
-            "comment": name_standardization(row["comment"])
+            "name": name_standardization(row["name"], "name"),
+            "comment": name_standardization(row["comment"], "comment")
         })
 
     corpus = []
