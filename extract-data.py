@@ -35,13 +35,10 @@ def comment_standardization(comment):
     :return: standardized comment line
     """
     if comment is not None:
-        comment = re.sub(r"[\n].*", r"", comment)
+        comment = re.sub(r"[\n].*", r"", comment)  # remove everything after the first line breaks
         comment = re.sub(r"\((.*?)\)", r"", comment)  # remove text in brackets (delete examples)
-        comment = re.sub(r"(,)+", r"", comment)
-        comment = re.sub(r"(`)+", r"", comment)
-        comment = re.sub(r"(')+", r"", comment)
-        comment = re.sub(r"(\")+", r"", comment)
-        comment = re.sub(r"\.+$", r"", comment)
+        comment = re.sub(r"(,)+|(`)+|(')+|(\")+", r"", comment)  # remove punctuation
+        comment = re.sub(r"\.+$", r"", comment)  # remove last dot
     return comment
 
 

@@ -192,7 +192,7 @@ def remove_stopwords(text):
          "input", "int", "isinstance", "issubclass", "iter", "len", "license", "list", "locals", "map", "max",
          "memoryview", "min", "next", "object", "oct", "open", "ord", "pow", "print", "property", "quit", "range",
          "repr", "reversed", "round", "get", "set", "setattr", "slice", "sorted", "staticmethod", "str", "sum", "super",
-         "tuple", "type", "vars", "zip"})
+         "tuple", "type", "vars", "zip", "optimizer", "optimize", "RNN", "optim"})
     tokenized_text = text.split()
     words_filtered = [word for word in tokenized_text if word not in edited_stopwords]
 
@@ -202,7 +202,7 @@ def remove_stopwords(text):
 
 def name_standardization(data):
     """
-    Standardize a method name:
+    Standardize a method/comment name:
     1. split entity names (by CamelCase and underscore)
     2. filter stopwords = {test, tests, main}
     3. convert all words to lowercase
