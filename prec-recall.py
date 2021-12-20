@@ -130,9 +130,9 @@ def get_POS_list(expected_line, top_5, data):
         top_5_index.append(data[elem]["csv_line"])
 
     # PRINT THIS TO CHECK LINES AND ENTITIES
-    # print("Expected line:\t", expected_line)
-    # print("Top 5 index\t:", top_5_index)
-    # search_data.print_top_5_entities(data, top_5, "FREQ")
+    #print("Expected line:\t", expected_line)
+    #print("Top 5 index\t:", top_5_index)
+    #search_data.print_top_5_entities(data, top_5, "FREQ")
 
     pos_list = []
     for index, top_5_line in enumerate(top_5_index, start=1):
@@ -212,8 +212,6 @@ def ground_truth_txt_to_dict():
             if len(lines) < 3:  # Make sure that there is the correct amount of lines
                 return "ERROR!"
 
-            #src_path = lines[2].replace("../", "", 1)
-            #abs_path = os.path.join(os.path.abspath(os.curdir), src_path)
             ground_truth.append({
                 "query": lines[0].lower(),
                 "function/class name": lines[1],

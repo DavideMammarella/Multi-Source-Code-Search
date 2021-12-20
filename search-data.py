@@ -195,33 +195,12 @@ def remove_stopwords(text):
          "tuple", "type", "vars", "zip"})
     tokenized_text = text.split()
     words_filtered = [word for word in tokenized_text if word not in edited_stopwords]
+
     word = " ".join(words_filtered)
     return word
 
 
-def comment_standardization(data):
-    """
-    Standardize a comment:
-    1. split entity names (by CamelCase and underscore)
-    2. filter stopwords = {test, tests, main}
-    3. convert all words to lowercase
-    4. add additional filters for comments
-    :param data: ["name", "comment"]
-    """
-    words = data.replace("_", " ")  # split by underscore
-    words = re.sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))", r" \1", words)  # split by CamelCase
-    words = remove_stopwords(words)  # remove stopwords
-    words = words.lower()  # convert to lowercase
-    words = re.sub(r"\((.*?)\)", r"", words)  # remove text in brackets (delete examples)
-    words = re.sub(r"(->)+", r" ", words)  # remove ->
-    words = re.sub(r"(\s+)", r" ", words)  # replace multiple whitespaces with a single one
-    words = re.sub(r"( \. )+", r" ", words)  # replace dot with  double spaces
-    words = words.split(". ")
-
-    return words
-
-
-def method_name_standardization(data):
+def name_standardization(data):
     """
     Standardize a method name:
     1. split entity names (by CamelCase and underscore)
@@ -246,8 +225,8 @@ def create_corpus(data):
     for index, row in enumerate(data):
         data_name_comment_standardized.append({
             "csv_line": row["csv_line"],
-            "name": method_name_standardization(row["name"]),
-            "comment": comment_standardization(row["comment"])
+            "name": name_standardization(row["name"]),
+            "comment": name_standardization(row["comment"])
         })
 
     corpus = []

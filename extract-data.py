@@ -30,14 +30,18 @@ def write_csv():
 
 def comment_standardization(comment):
     """
-    Standardize a comment line in order to be processed by a dictionary (remove " and \n).
+    Standardize a comment to the essential.
     :param comment: comment line
     :return: standardized comment line
     """
     if comment is not None:
-        comment = re.sub(r'["{1,}]', "", comment)
-        comment = re.sub(r"[\n]", " ", comment)
-        comment = re.sub(" {2,}", " ", comment)
+        comment = re.sub(r"[\n].*", r"", comment)
+        comment = re.sub(r"\((.*?)\)", r"", comment)  # remove text in brackets (delete examples)
+        comment = re.sub(r"(,)+", r"", comment)
+        comment = re.sub(r"(`)+", r"", comment)
+        comment = re.sub(r"(')+", r"", comment)
+        comment = re.sub(r"(\")+", r"", comment)
+        comment = re.sub(r"\.+$", r"", comment)
     return comment
 
 
