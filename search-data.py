@@ -5,6 +5,7 @@ from gensim.models import TfidfModel, LsiModel
 from gensim.corpora import Dictionary, MmCorpus
 from collections import defaultdict
 from pathlib import Path
+import shutil
 import gensim
 import csv
 import re
@@ -74,7 +75,7 @@ def get_top_5_index(similarity):
 def lsi_query(query):
     tfidf = TfidfModel.load("utils/tf_idf/model")
     lsi = LsiModel.load("utils/lsi/model")
-    corpus_lsi = MmCorpus("utils/lsi/corpus_lsi")
+    corpus_lsi = MmCorpus("utils/lsi/corpus_lsi.mm")
 
     query_bow = process_query(query)
     vec_lsi = lsi[tfidf[query_bow]]
@@ -88,8 +89,8 @@ def lsi_query(query):
 
 
 def lsi_train():
-    corpus_bow = MmCorpus("utils/corpus")
-    dictionary = Dictionary.load("utils/dictionary")
+    corpus_bow = MmCorpus("utils/corpus.mm")
+    dictionary = Dictionary.load("utils/dictionary.dict")
     Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
     Path("utils/lsi").mkdir(parents=True, exist_ok=True)
 
@@ -107,7 +108,7 @@ def lsi_train():
         lsi.save("utils/lsi/model")
     corpus_lsi = lsi[corpus_tf_idf]
 
-    MmCorpus.serialize("utils/lsi/corpus_lsi", corpus_lsi)
+    MmCorpus.serialize("utils/lsi/corpus_lsi.mm", corpus_lsi)
 
 
 def tf_idf_query(query):
@@ -121,8 +122,8 @@ def tf_idf_query(query):
 
 
 def tf_idf_train():
-    corpus_bow = MmCorpus("utils/corpus")
-    dictionary = Dictionary.load("utils/dictionary")
+    corpus_bow = MmCorpus("utils/corpus.mm")
+    dictionary = Dictionary.load("utils/dictionary.dict")
     Path("utils/tf_idf").mkdir(parents=True, exist_ok=True)
 
     if os.path.exists("utils/tf_idf/model"):
@@ -136,8 +137,8 @@ def tf_idf_train():
 
 
 def freq_query(query):
-    corpus_bow = MmCorpus("utils/corpus")
-    dictionary = Dictionary.load("utils/dictionary")
+    corpus_bow = MmCorpus("utils/corpus.mm")
+    dictionary = Dictionary.load("utils/dictionary.dict")
 
     frequency_index = SparseMatrixSimilarity(corpus_bow, num_features=len(dictionary))
 
@@ -150,23 +151,27 @@ def freq_query(query):
 
 
 def process_query(query):
-    dictionary = Dictionary.load("utils/dictionary")
+    dictionary = Dictionary.load("utils/dictionary.dict")
     query_bow = dictionary.doc2bow(query.lower().split())
     return query_bow
 
 
 def process_corpus(corpus):
+    """
+    Remove words that appear only once.
+    """
     frequency = defaultdict(int)
     for text in corpus:
         for token in text:
             frequency[token] += 1
     processed_corpus = [[token for token in text if frequency[token] > 1] for text in corpus]
+    
     dictionary = Dictionary(processed_corpus)
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
 
     Path("utils").mkdir(parents=True, exist_ok=True)
-    dictionary.save("utils/dictionary")
-    MmCorpus.serialize("utils/corpus", corpus_bow)
+    dictionary.save("utils/dictionary.dict")
+    MmCorpus.serialize("utils/corpus.mm", corpus_bow)
 
 
 def remove_method_stopwords(text):
@@ -236,6 +241,10 @@ def extract_data():
 
 
 def main():
+    dirpath = Path("utils")
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
+
     data = extract_data()
     corpus = create_corpus(data)
     process_corpus(corpus)

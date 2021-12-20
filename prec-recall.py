@@ -72,7 +72,7 @@ def get_embedding_vectors_lsi(query_data):
     queries = [d["ground_truth_query"] for d in query_data]
 
     lsi = LsiModel.load("utils/lsi/model")
-    corpus_lsi = MmCorpus("utils/lsi/corpus_lsi")
+    corpus_lsi = MmCorpus("utils/lsi/corpus_lsi.mm")
     lsi_index = MatrixSimilarity.load("utils/lsi/lsi.index")
 
     embeddings_lsi = []
@@ -225,18 +225,17 @@ def ground_truth_txt_to_dict():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def main():
-    #search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
-    search_engines = ["LSI", "DOC2VEC"]
+    search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
 
     ground_truth_dict_list = ground_truth_txt_to_dict()
     query_data = query_search_engine(ground_truth_dict_list, search_engines)
 
     measure_precision_and_recall(query_data, search_engines)
 
-    # lsi_embeddings = get_embedding_vectors_lsi(query_data)
-    # doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-    # plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
-    # plot_tsne(lsi_embeddings, query_data, "lsi")
+    lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+    plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+    plot_tsne(lsi_embeddings, query_data, "lsi")
 
 
 if __name__ == "__main__":

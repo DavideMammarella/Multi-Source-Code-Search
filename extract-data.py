@@ -67,6 +67,9 @@ def add_data(name, file, line, entity_type, comment):
     :param entity_type: class/method/function
     :param comment: comment line of the class/method/function entity
     """
+    for d in extracted_data:
+        if d["name"] == name and d["type"] == entity_type and d["comment"] == comment:
+            return
     data = {"name": name, "file": file, "line": line, "type": entity_type, "comment": comment}
     extracted_data.append(data)
 
