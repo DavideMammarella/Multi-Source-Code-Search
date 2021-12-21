@@ -19,7 +19,7 @@ search_data = importlib.import_module("search-data")
 # ----------------------------------------------------------------------------------------------------------------------
 
 def plot_tsne(embedding_vectors, query_data, plotname):
-    tsne = TSNE(n_components=2, verbose=1, perplexity=2, n_iter=3000)
+    tsne = TSNE(n_components=2, verbose=0, perplexity=2, n_iter=3000)
     tsne_results = tsne.fit_transform(embedding_vectors)
 
     hues = []
@@ -28,11 +28,11 @@ def plot_tsne(embedding_vectors, query_data, plotname):
         hues.extend([query] * 6)
 
     df = pd.DataFrame()
-    df['tsne-2d-one'] = tsne_results[:, 0]
-    df['tsne-2d-two'] = tsne_results[:, 1]
-    plt.figure(figsize=(10, 10))
+    df["x"] = tsne_results[:, 0]
+    df["y"] = tsne_results[:, 1]
+    plt.figure(figsize=(7, 7))
     sns.scatterplot(
-        x="tsne-2d-one", y="tsne-2d-two",
+        x="x", y="y",
         hue=hues,
         palette=sns.color_palette("husl", n_colors=10),
         data=df,
