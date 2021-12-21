@@ -37,8 +37,9 @@ def comment_standardization(comment):
     if comment is not None:
         comment = re.sub(r"[\n].*", r"", comment)  # remove everything after the first line breaks
         comment = re.sub(r"\((.*?)\)+", r"", comment)  # remove text in brackets (delete examples)
-        comment = re.sub(r"(,)+|(`)+|(')+|(\")+", r"", comment)  # remove punctuation
-        comment = re.sub(r"(&)+|(\+)+|(/)+|(\")+", r" ", comment)  # remove punctuation
+        comment = re.sub(r"([1-3][0-9]{3})+", r"", comment)  # remove years
+        comment = re.sub(r"(,)+|(`)+|(')+|(\")+|(<->)+|(->)+", r"", comment)  # remove punctuation
+        comment = re.sub(r"(&)+|(\+)+|(/)+", r" ", comment)  # remove punctuation
         comment = re.sub(r"\.+$", r"", comment)  # remove last dot
     return comment
 
