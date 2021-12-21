@@ -36,8 +36,9 @@ def comment_standardization(comment):
     """
     if comment is not None:
         comment = re.sub(r"[\n].*", r"", comment)  # remove everything after the first line breaks
-        comment = re.sub(r"\((.*?)\)", r"", comment)  # remove text in brackets (delete examples)
+        comment = re.sub(r"\((.*?)\)+", r"", comment)  # remove text in brackets (delete examples)
         comment = re.sub(r"(,)+|(`)+|(')+|(\")+", r"", comment)  # remove punctuation
+        comment = re.sub(r"(&)+|(\+)+|(/)+|(\")+", r" ", comment)  # remove punctuation
         comment = re.sub(r"\.+$", r"", comment)  # remove last dot
     return comment
 
@@ -68,7 +69,7 @@ def add_data(name, file, line, entity_type, comment):
     :param comment: comment line of the class/method/function entity
     """
     for d in extracted_data:
-        if d["name"] == name and d["type"] == entity_type and d["comment"] == comment:
+        if d["name"] == name and d["file"] == file and d["type"] == entity_type and d["comment"] == comment:
             return
     data = {"name": name, "file": file, "line": line, "type": entity_type, "comment": comment}
     extracted_data.append(data)
