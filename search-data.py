@@ -165,7 +165,7 @@ def process_corpus(corpus):
         for token in text:
             frequency[token] += 1
     processed_corpus = [[token for token in text if frequency[token] > 1] for text in corpus]
-    
+
     dictionary = Dictionary(processed_corpus)
     corpus_bow = [dictionary.doc2bow(text) for text in processed_corpus]
 

@@ -130,9 +130,9 @@ def get_POS_list(expected_line, top_5, data):
         top_5_index.append(data[elem]["csv_line"])
 
     # PRINT THIS TO CHECK LINES AND ENTITIES
-    #print("Expected line:\t", expected_line)
-    #print("Top 5 index\t:", top_5_index)
-    #search_data.print_top_5_entities(data, top_5, "FREQ")
+    # print("Expected line:\t", expected_line)
+    # print("Top 5 index\t:", top_5_index)
+    # search_data.print_top_5_entities(data, top_5, "FREQ")
 
     pos_list = []
     for index, top_5_line in enumerate(top_5_index, start=1):
@@ -150,7 +150,7 @@ def get_index_from_data_csv(expected_name, expected_file, data):
             return d["csv_line"]
 
 
-#checked
+# checked
 def measure_precision_and_recall(query_data, search_engines):
     data = search_data.extract_data()
 
