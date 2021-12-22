@@ -19,10 +19,10 @@ def write_csv():
         for data in extracted_data:
             writer.writerow(data)
 
-    print("\tClasses: ", len([d for d in extracted_data if d.get("type") == "class"]),
-          "\n\tFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
-          "\n\tMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
-          "\n\tTotal entities:", len(extracted_data))
+    print(">> Classes: ", len([d for d in extracted_data if d.get("type") == "class"]),
+          "\n>> Functions: ", len([d for d in extracted_data if d.get("type") == "function"]),
+          "\n>> Methods: ", len([d for d in extracted_data if d.get("type") == "method"]),
+          "\n>> Total entities:", len(extracted_data))
 
 
 def comment_standardization(comment):
@@ -132,7 +132,7 @@ def get_and_visit_files(directory, file_extension):
                     files_count = files_count + 1
                     ast_of_py_file = ast.parse(py_file.read())
                     AstVisitor().visit(ast_of_py_file)
-    print("Python files: ", files_count)
+    print(">> Python files: ", files_count)
 
 
 def silentremove(filename):
@@ -146,10 +146,9 @@ def silentremove(filename):
 def main():
     silentremove("data.csv")
     root_directory = "tensorflow"
-    print("Creating data.csv...\nMetrics:")
+    print("Creating data.csv...\n")
     get_and_visit_files(root_directory, "*.py")
     write_csv()
-    print("Data.csv created!")
 
 
 if __name__ == "__main__":

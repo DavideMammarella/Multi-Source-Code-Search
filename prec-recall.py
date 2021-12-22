@@ -120,7 +120,6 @@ def get_avg_precision_recall(query_data, search_engines):
     return search_engines_data
 
 
-
 def get_POS_list(expected_line, top_5, data):
     expected_line = int(expected_line)
 
@@ -142,12 +141,10 @@ def get_POS_list(expected_line, top_5, data):
     return pos_list
 
 
-
 def get_index_from_data_csv(expected_name, expected_file, data):
     for d in data:
         if d["name"] == expected_name and d["file"] == expected_file:
             return d["csv_line"]
-
 
 
 def output_engines_data(search_engines_data):
@@ -155,9 +152,9 @@ def output_engines_data(search_engines_data):
         search_engine = d["search_engine"]
         avg_precision = d["avg_precision"]
         recall = d["recall"]
-        print("\t", search_engine,
-              "\n\t\tAverage Precision: ", avg_precision,
-              "\n\t\tRecall: ", recall)
+        print("\n>>", search_engine,
+              "\n>> Average Precision: ", avg_precision,
+              "\n>> Recall: ", recall)
 
 
 def measure_precision_and_recall(query_data, search_engines):
@@ -243,76 +240,64 @@ def gather_train_info():
     else:
         return False
 
-def gather_search_engines():
-    search_engines = []
-    number = int(input("---------------------------------------------------------------------------------\n"
-                       "Available search engines\n\t0: ALL\n\t1: FREQ\n\t2: TF IDF\n\t3: LSI\n\t4: DOC2VEC\n"
-                       "---------------------------------------------------------------------------------\n"
-                       "Enter the number of the search engine you want to use: "))
-    if number == 0:
-        search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
-    elif number == 1:
-        search_engines = ["FREQ"]
-    elif number == 2:
-        search_engines = ["TF_IDF"]
-    elif number == 3:
-        search_engines = ["LSI"]
-    elif number == 3:
-        search_engines = ["DOC2VEC"]
 
-    return search_engines
+def train_search_engines():
+    print("---------------------------------------------------------------------------------\n"
+          "Creating data.csv...\n")
+    create_csv.silentremove("data.csv")
+    create_csv.get_and_visit_files("tensorflow", "*.py")
+    create_csv.write_csv()
+    search_data.silentremove("utils")
+    data = search_data.extract_data()
+    corpus = search_data.create_corpus(data)
+    print("---------------------------------------------------------------------------------\n"
+          "Training...\n")
+    search_data.process_corpus(corpus)
+    print(">> FREQ trained!")
+    search_data.tf_idf_train()
+    print(">> TF IDF trained!")
+    search_data.lsi_train()
+    print(">> LSI trained!")
+    search_data.doc2vec_train(corpus)
+    print(">> DOC2VEC trained!")
+
+
+def analyze_search_engines(search_engines):
+    print("---------------------------------------------------------------------------------\n"
+          "Computing precision and recall...")
+    ground_truth_dict_list = ground_truth_txt_to_dict()
+    query_data = query_search_engine(ground_truth_dict_list, search_engines)
+
+    measure_precision_and_recall(query_data, search_engines)
+
+    print("---------------------------------------------------------------------------------\n"
+          "Plotting t_SNE...")
+    lsi_embeddings = get_embedding_vectors_lsi(query_data)
+    plot_tsne(lsi_embeddings, query_data, "lsi")
+    doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+    plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+    print("Done! Plots can be found in Multi-Source-Code-Search folder!\n"
+          "---------------------------------------------------------------------------------")
 
 
 def main():
     while True:
-        search_engines = gather_search_engines()
+        print("---------------------------------------------------------------------------------\n"
+              "Available search engines: FREQ, TF IDF, LSI, DOC2VEC...")
+        search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
         train = gather_train_info()
 
-        if train:
-            print("\n---------------------------------------------------------------------------------\n"
-                  "Creating data.csv..."
-                  "\nMetrics:")
-            create_csv.silentremove("data.csv")
-            create_csv.get_and_visit_files("tensorflow", "*.py")
-            create_csv.write_csv()
-            search_data.silentremove("utils")
-            print("Data.csv created!")
-            data = search_data.extract_data()
-            corpus = search_data.create_corpus(data)
-            print("\n---------------------------------------------------------------------------------\n"
-                  "Training...")
-            search_data.process_corpus(corpus)
-
-            if "TF_IDF" in search_engines:
-                search_data.tf_idf_train()
-                print("TF IDF trained!")
-            if "LSI" in search_engines:
-                search_data.lsi_train()
-                print("LSI trained!")
-            if "DOC2VEC" in search_engines:
-                search_data.doc2vec_train(corpus)
-                print("DOC2VEC trained!")
-
-        print("\n---------------------------------------------------------------------------------\n"
-              "Computing precision and recall...")
-        ground_truth_dict_list = ground_truth_txt_to_dict()
-        query_data = query_search_engine(ground_truth_dict_list, search_engines)
-
-        measure_precision_and_recall(query_data, search_engines)
-
-        print("\n---------------------------------------------------------------------------------\n"
-              "Plotting t_SNE...")
-        if "LSI" in search_engines:
-            lsi_embeddings = get_embedding_vectors_lsi(query_data)
-            plot_tsne(lsi_embeddings, query_data, "lsi")
-            print("Done! Plots can be found in Multi-Source-Code-Search folder!")
-
-        if "DOC2VEC" in search_engines:
-            doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-            plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
-            print("Done! Plots can be found in Multi-Source-Code-Search folder!")
+        try:
+            if train:
+                train_search_engines()
+            analyze_search_engines(search_engines)
+        except Exception:
+            print("Got exception!")
+            train_search_engines()
+            analyze_search_engines(search_engines)
 
         break
+
 
 if __name__ == "__main__":
     main()
