@@ -258,7 +258,7 @@ def main():
         train = gather_train_info()
 
         if train:
-            print("Creating data.csv...\nMetrics:\n")
+            print("Creating data.csv...\nMetrics:")
             create_csv.silentremove("data.csv")
             create_csv.get_and_visit_files("tensorflow", "*.py")
             create_csv.write_csv()
@@ -284,7 +284,7 @@ def main():
         doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
         plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
         plot_tsne(lsi_embeddings, query_data, "lsi")
-        print("Done! Models and Plots can be found in Multi-Source-Code-Search folder")
+        print("Done! Models and Plots can be found in Multi-Source-Code-Search folder!")
         break
 
 if __name__ == "__main__":

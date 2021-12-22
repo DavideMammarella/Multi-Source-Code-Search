@@ -19,10 +19,10 @@ def write_csv():
         for data in extracted_data:
             writer.writerow(data)
 
-    print("Classes: ", len([d for d in extracted_data if d.get("type") == "class"]),
-          "\nFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
-          "\nMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
-          "\nTotal entities:", len(extracted_data))
+    print("\tClasses: ", len([d for d in extracted_data if d.get("type") == "class"]),
+          "\t\nFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
+          "\t\nMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
+          "\t\nTotal entities:", len(extracted_data))
 
 
 def comment_standardization(comment):
@@ -103,6 +103,13 @@ class AstVisitor(ast.NodeVisitor):
             comment = comment_standardization(ast.get_docstring(node))
             add_data(node.name, file_path_and_name, node.lineno, "function", comment)
 
+def get_file_name_and_path(directory, file, path):
+    if os.path.relpath(path, start=directory)[-2:] == ".":
+        path_name = "../tensorflow/" + os.path.relpath(path, start=directory)[2:] + file
+    else:
+        path_name = "../tensorflow/" + os.path.relpath(path, start=directory) + "/" + file
+    return path_name
+
 
 def get_and_visit_files(directory, file_extension):
     """
@@ -119,7 +126,7 @@ def get_and_visit_files(directory, file_extension):
     for path, _, files in os.walk(directory):
         for file in files:
             if fnmatch(file, file_extension):
-                file_path_and_name = "../" + os.path.join(os.path.relpath(path, start=os.curdir), file)
+                file_path_and_name = get_file_name_and_path(directory, file, path)
                 file_path = os.path.join(path, file)
                 with open(file_path, 'r') as py_file:
                     files_count = files_count + 1
@@ -139,8 +146,10 @@ def silentremove(filename):
 def main():
     silentremove("data.csv")
     root_directory = "tensorflow"
+    print("Creating data.csv...\nMetrics:")
     get_and_visit_files(root_directory, "*.py")
     write_csv()
+    print("Data.csv created!")
 
 
 if __name__ == "__main__":
