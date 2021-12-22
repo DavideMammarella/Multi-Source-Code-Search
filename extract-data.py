@@ -54,8 +54,9 @@ def is_not_in_blacklist(node_name):
     :param node_name: name of the node
     :return: True if the name is not in the black list, False otherwise
     """
-    caseless_node_name = node_name.casefold()
-    if (node_name != "main") and not (node_name.startswith("_")) and ("test" not in caseless_node_name):
+    if re.search(r"test", node_name.casefold(), flags=re.IGNORECASE):
+        return False
+    if (node_name != "main") and not (node_name.startswith("_")):
         return True
 
 
@@ -70,7 +71,7 @@ def add_data(name, file, line, entity_type, comment):
     :param comment: comment line of the class/method/function entity
     """
     for d in extracted_data:
-        if d["name"] == name and d["file"] == file and d["type"] == entity_type and d["comment"] == comment:
+        if d["name"] == name and d["type"] == entity_type and d["comment"] == comment:
             return
     data = {"name": name, "file": file, "line": line, "type": entity_type, "comment": comment}
     extracted_data.append(data)

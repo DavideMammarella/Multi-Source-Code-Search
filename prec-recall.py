@@ -109,8 +109,8 @@ def get_avg_precision_recall(query_data, search_engines):
         engine_precision = [d["top_5_" + search_engine + "_prec"] for d in query_data]
         engine_recall = [d["top_5_" + search_engine + "_correct"] for d in query_data]
 
-        avg_precision = sum(engine_precision) / len(engine_precision)
-        avg_recall = sum(engine_recall) / len(engine_recall)
+        avg_precision = round(sum(engine_precision) / len(engine_precision), 2)
+        avg_recall = round(sum(engine_recall) / len(engine_recall), 2)
 
         search_engines_data.append({
             "search_engine": search_engine,
@@ -123,6 +123,10 @@ def get_avg_precision_recall(query_data, search_engines):
 
 # checked
 def get_POS_list(expected_line, top_5, data):
+    if expected_line is None:
+        print("This class/method/function doesn't exists in data.csv...")
+        expected_line = 0
+
     expected_line = int(expected_line)
 
     top_5_index = []
@@ -130,9 +134,9 @@ def get_POS_list(expected_line, top_5, data):
         top_5_index.append(data[elem]["csv_line"])
 
     # PRINT THIS TO CHECK LINES AND ENTITIES
-    # print("Expected line:\t", expected_line)
-    # print("Top 5 index\t:", top_5_index)
-    # search_data.print_top_5_entities(data, top_5, "FREQ")
+    print("Expected line:\t", expected_line)
+    print("Top 5 index\t:", top_5_index)
+    search_data.print_top_5_entities(data, top_5, "FREQ")
 
     pos_list = []
     for index, top_5_line in enumerate(top_5_index, start=1):
@@ -159,6 +163,7 @@ def measure_precision_and_recall(query_data, search_engines):
         expected_file = d["ground_truth_file"]
         expected_line = get_index_from_data_csv(expected_name, expected_file, data)
         d.update({"ground_truth_line": expected_line})
+        print(expected_name, expected_file, expected_line)
 
         for search_engine in search_engines:
             POS = get_POS_list(expected_line, d["top_5_" + search_engine],
