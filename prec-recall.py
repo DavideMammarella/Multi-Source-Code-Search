@@ -100,7 +100,7 @@ def get_embedding_vectors_lsi(query_data):
 # PRECISION - RECALL
 # ----------------------------------------------------------------------------------------------------------------------
 
-# checked
+
 def get_avg_precision_recall(query_data, search_engines):
     search_engines_data = []
 
@@ -120,7 +120,7 @@ def get_avg_precision_recall(query_data, search_engines):
     return search_engines_data
 
 
-# checked
+
 def get_POS_list(expected_line, top_5, data):
     expected_line = int(expected_line)
 
@@ -142,14 +142,24 @@ def get_POS_list(expected_line, top_5, data):
     return pos_list
 
 
-# checked
+
 def get_index_from_data_csv(expected_name, expected_file, data):
     for d in data:
         if d["name"] == expected_name and d["file"] == expected_file:
             return d["csv_line"]
 
 
-# checked
+
+def output_engines_data(search_engines_data):
+    for d in search_engines_data:
+        search_engine = d["search_engine"]
+        avg_precision = d["avg_precision"]
+        recall = d["recall"]
+        print("\t", search_engine,
+              "\n\t\tAverage Precision: ", avg_precision,
+              "\n\t\tRecall: ", recall)
+
+
 def measure_precision_and_recall(query_data, search_engines):
     data = search_data.extract_data()
 
@@ -175,8 +185,7 @@ def measure_precision_and_recall(query_data, search_engines):
     # print(json.dumps(query_data, indent=1))
 
     search_engines_data = get_avg_precision_recall(query_data, search_engines)
-    # PRINT THIS FOR AVERAGE PRECISION/RECALL ABOVE ALL QUERIES
-    print(json.dumps(search_engines_data, indent=1))
+    output_engines_data(search_engines_data)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -236,7 +245,10 @@ def gather_train_info():
 
 def gather_search_engines():
     search_engines = []
-    number = int(input("AVAILABLE SEARCH ENGINES\n\t0: ALL\n\t1: FREQ\n\t2: TF IDF\n\t3: LSI\n\t4: DOC2VEC\nEnter the number of the search engine you want to use: "))
+    number = int(input("---------------------------------------------------------------------------------\n"
+                       "Available search engines\n\t0: ALL\n\t1: FREQ\n\t2: TF IDF\n\t3: LSI\n\t4: DOC2VEC\n"
+                       "---------------------------------------------------------------------------------\n"
+                       "Enter the number of the search engine you want to use: "))
     if number == 0:
         search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
     elif number == 1:
@@ -254,11 +266,12 @@ def gather_search_engines():
 def main():
     while True:
         search_engines = gather_search_engines()
-
         train = gather_train_info()
 
         if train:
-            print("Creating data.csv...\nMetrics:")
+            print("\n---------------------------------------------------------------------------------\n"
+                  "Creating data.csv..."
+                  "\nMetrics:")
             create_csv.silentremove("data.csv")
             create_csv.get_and_visit_files("tensorflow", "*.py")
             create_csv.write_csv()
@@ -266,25 +279,39 @@ def main():
             print("Data.csv created!")
             data = search_data.extract_data()
             corpus = search_data.create_corpus(data)
-            print("Training...")
+            print("\n---------------------------------------------------------------------------------\n"
+                  "Training...")
             search_data.process_corpus(corpus)
-            search_data.tf_idf_train()
-            search_data.lsi_train()
-            search_data.doc2vec_train(corpus)
-            print("Training done!")
 
-        print("Computing precision and recall...")
+            if "TF_IDF" in search_engines:
+                search_data.tf_idf_train()
+                print("TF IDF trained!")
+            if "LSI" in search_engines:
+                search_data.lsi_train()
+                print("LSI trained!")
+            if "DOC2VEC" in search_engines:
+                search_data.doc2vec_train(corpus)
+                print("DOC2VEC trained!")
+
+        print("\n---------------------------------------------------------------------------------\n"
+              "Computing precision and recall...")
         ground_truth_dict_list = ground_truth_txt_to_dict()
         query_data = query_search_engine(ground_truth_dict_list, search_engines)
 
         measure_precision_and_recall(query_data, search_engines)
 
-        print("Plotting t_SNE...")
-        lsi_embeddings = get_embedding_vectors_lsi(query_data)
-        doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-        plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
-        plot_tsne(lsi_embeddings, query_data, "lsi")
-        print("Done! Models and Plots can be found in Multi-Source-Code-Search folder!")
+        print("\n---------------------------------------------------------------------------------\n"
+              "Plotting t_SNE...")
+        if "LSI" in search_engines:
+            lsi_embeddings = get_embedding_vectors_lsi(query_data)
+            plot_tsne(lsi_embeddings, query_data, "lsi")
+            print("Done! Plots can be found in Multi-Source-Code-Search folder!")
+
+        if "DOC2VEC" in search_engines:
+            doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+            plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+            print("Done! Plots can be found in Multi-Source-Code-Search folder!")
+
         break
 
 if __name__ == "__main__":

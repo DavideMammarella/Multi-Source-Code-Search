@@ -20,9 +20,9 @@ def write_csv():
             writer.writerow(data)
 
     print("\tClasses: ", len([d for d in extracted_data if d.get("type") == "class"]),
-          "\t\nFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
-          "\t\nMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
-          "\t\nTotal entities:", len(extracted_data))
+          "\n\tFunctions: ", len([d for d in extracted_data if d.get("type") == "function"]),
+          "\n\tMethods: ", len([d for d in extracted_data if d.get("type") == "method"]),
+          "\n\tTotal entities:", len(extracted_data))
 
 
 def comment_standardization(comment):
