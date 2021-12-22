@@ -1,15 +1,10 @@
 from gensim.similarities import SparseMatrixSimilarity, MatrixSimilarity
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from gensim.parsing.preprocessing import preprocess_string, remove_stopwords, stem_text
+from gensim.models.doc2vec import Doc2Vec
 from gensim.models import TfidfModel, LsiModel
 from gensim.corpora import Dictionary, MmCorpus
 from collections import defaultdict
 from pathlib import Path
-import shutil
-import gensim
-import csv
-import re
-import os
+import shutil, gensim, csv, re, os, errno
 
 
 def print_top_5_entities(data, top_5_index, search_engine):
@@ -240,11 +235,17 @@ def extract_data():
     return data_raw
 
 
-def main():
-    dirpath = Path("utils")
-    if dirpath.exists() and dirpath.is_dir():
-        shutil.rmtree(dirpath)
+def silentremove(filename):
+    dirpath = Path(filename)
+    try:
+        if dirpath.exists() and dirpath.is_dir():
+            shutil.rmtree(dirpath)
+    except OSError as e:
+        if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+            raise  # re-raise exception if a different error occurred
 
+
+def main():
     data = extract_data()
     corpus = create_corpus(data)
     process_corpus(corpus)
@@ -266,4 +267,5 @@ def main():
 
 
 if __name__ == "__main__":
+    silentremove("utils")
     main()

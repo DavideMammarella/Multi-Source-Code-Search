@@ -1,8 +1,5 @@
 from fnmatch import fnmatch
-import ast
-import csv
-import os
-import re
+import errno, ast, csv, os, re
 
 extracted_data = []
 file_path_and_name = None
@@ -131,6 +128,14 @@ def get_and_visit_files(directory, file_extension):
     print("Python files: ", files_count)
 
 
+def silentremove(filename):
+    try:
+        os.remove(filename)
+    except OSError as e:
+        if e.errno != errno.ENOENT:  # errno.ENOENT = no such file or directory
+            raise  # re-raise exception if a different error occurred
+
+
 def main():
     root_directory = "tensorflow"
     get_and_visit_files(root_directory, "*.py")
@@ -138,4 +143,5 @@ def main():
 
 
 if __name__ == "__main__":
+    silentremove("data.csv")
     main()
