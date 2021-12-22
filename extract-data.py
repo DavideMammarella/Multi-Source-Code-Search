@@ -137,11 +137,11 @@ def silentremove(filename):
 
 
 def main():
+    silentremove("data.csv")
     root_directory = "tensorflow"
     get_and_visit_files(root_directory, "*.py")
     write_csv()
 
 
 if __name__ == "__main__":
-    silentremove("data.csv")
     main()

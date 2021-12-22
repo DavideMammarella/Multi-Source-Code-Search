@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 search_data = importlib.import_module("search-data")
+create_csv = importlib.import_module("extract-data")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -225,19 +226,66 @@ def ground_truth_txt_to_dict():
 # MAIN
 # ----------------------------------------------------------------------------------------------------------------------
 
+def gather_train_info():
+    answer = input("Has the training already been done? (yes or no): ")
+
+    if answer == "no":
+        return True
+    else:
+        return False
+
+def gather_search_engines():
+    search_engines = []
+    number = int(input("AVAILABLE SEARCH ENGINES\n\t0: ALL\n\t1: FREQ\n\t2: TF IDF\n\t3: LSI\n\t4: DOC2VEC\nEnter the number of the search engine you want to use: "))
+    if number == 0:
+        search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
+    elif number == 1:
+        search_engines = ["FREQ"]
+    elif number == 2:
+        search_engines = ["TF_IDF"]
+    elif number == 3:
+        search_engines = ["LSI"]
+    elif number == 3:
+        search_engines = ["DOC2VEC"]
+
+    return search_engines
+
+
 def main():
-    search_engines = ["FREQ", "TF_IDF", "LSI", "DOC2VEC"]
+    while True:
+        search_engines = gather_search_engines()
 
-    ground_truth_dict_list = ground_truth_txt_to_dict()
-    query_data = query_search_engine(ground_truth_dict_list, search_engines)
+        train = gather_train_info()
 
-    measure_precision_and_recall(query_data, search_engines)
+        if train:
+            print("Creating data.csv...\nMetrics:\n")
+            create_csv.silentremove("data.csv")
+            create_csv.get_and_visit_files("tensorflow", "*.py")
+            create_csv.write_csv()
+            search_data.silentremove("utils")
+            print("Data.csv created!")
+            data = search_data.extract_data()
+            corpus = search_data.create_corpus(data)
+            print("Training...")
+            search_data.process_corpus(corpus)
+            search_data.tf_idf_train()
+            search_data.lsi_train()
+            search_data.doc2vec_train(corpus)
+            print("Training done!")
 
-    lsi_embeddings = get_embedding_vectors_lsi(query_data)
-    doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
-    plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
-    plot_tsne(lsi_embeddings, query_data, "lsi")
+        print("Computing precision and recall...")
+        ground_truth_dict_list = ground_truth_txt_to_dict()
+        query_data = query_search_engine(ground_truth_dict_list, search_engines)
 
+        measure_precision_and_recall(query_data, search_engines)
+
+        print("Plotting t_SNE...")
+        lsi_embeddings = get_embedding_vectors_lsi(query_data)
+        doc2vec_embeddings = get_embedding_vectors_doc2vec(query_data)
+        plot_tsne(doc2vec_embeddings, query_data, "doc2vec")
+        plot_tsne(lsi_embeddings, query_data, "lsi")
+        print("Done! Models and Plots can be found in Multi-Source-Code-Search folder")
+        break
 
 if __name__ == "__main__":
     main()
