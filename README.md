@@ -1,6 +1,6 @@
 # Multi-Source Code Search
-Second project of [Knowledge Analysis & Management](https://search.usi.ch/en/courses/35263581/knowledge-analysis-management) college course<br>
-The choices made during the development of this project are documented in the `report.pdf` file within the repository
+Second project of [Knowledge Analysis & Management](https://search.usi.ch/en/courses/35263581/knowledge-analysis-management) college course.<br>
+Choices made during the development of this project are documented in the `report.pdf` file within the repository.
 
 ## Prerequisites
 - `Python 3` must be installed on your machine (version `3.8.12` recommended for full compatibility with `Gensim`)
@@ -23,15 +23,15 @@ cd Multi-Source-Code-Search/
 ## Run the application
 The application can be used in two ways:
 - **Verbose Mode**: Manually run the commands sequentially (following the order in which they are listed below)
-- **Terminal Mode**: Run only `evaluate search engines` command (more in the section)
+- **Terminal Mode**: Run only `evaluate search engines` command (more in the relative section)
 
 #### Extract data
-Extract all top-level class names, functions and class methods (and comments if available) in *.py files found under the input directory <dir> and any directory under <dir> into a CSV file by running the following command:
+Extract all top-level class names, functions and class methods (and comments if available) in `*.py` files found under the input directory `tensorflow` and any directory under it into a CSV file by running the following command:
 ```
 python3 extract-data.py
 ```
 #### Training of search engines
-Train search engines (FREQ, TF-IDF, LSI, Doc2Vec) with the following command:
+Train search engines (`FREQ`, `TF-IDF`, `LSI`, `Doc2Vec`) with the following command:
 ```
 python3 search-data.py
 ```
